@@ -12,7 +12,9 @@ I added a LED class to practice with C++ scoping and use of combined header and 
 5 - print a colored string every 25ms  
 Youtube Video
 [![VID](http://img.youtube.com/vi/NfgCHvb00Ao/0.jpg)](http://www.youtube.com/watch?v=NfgCHvb00Ao "Screen Driver Demo")  
-# 2020-07-31 Demos  
+# 2020-07-31 Demos
+<img src="https://user-images.githubusercontent.com/30684972/89022296-100f2c00-d322-11ea-85a3-86236ec6eb70.gif" alt="Longan Nano profiling Demo" height="200">
+
 6 - print number on screen with reserved space and left/right adjust  
 7 - profiler with engineering number format, four significant digits and si suffix and time profiling and cpu usage of the demos  
 8 - profiler with colors  
