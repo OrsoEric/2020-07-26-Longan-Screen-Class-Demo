@@ -12,6 +12,7 @@
 *****************************************************************************
 **  Development of the display class for the ST7735S LCD controller
 **  interfaced to the SPI0 of the Risc-V Longan Nano board
+**  Codesize exploded. -fno-exceptions as compiler option brought it back under control
 ****************************************************************************/
 
 /****************************************************************************
@@ -75,6 +76,12 @@ typedef enum _Demo
     TEST_STRING_CONSOLE,
     //Periodically write a random string with random length in a random position with random colors on the screen
     TEST_STRING_CONSOLE_COLOR,
+    //Show numbers updating on the screen
+    TEST_NUMBERS,
+    //Engineering format strings
+    TEST_ENG_NUMBERS,
+    //Test the change_color 
+    TEST_CHANGE_COLORS,
     //Total number of demos installed
     NUM_DEMOS,
     //Maximum length of a demo string
@@ -107,12 +114,12 @@ volatile bool g_rtc_flag = false;
 //C++ Standard Random Number Generator
 std::default_random_engine g_rng_engine;
 //C++ standard random number distributions
-std::uniform_int_distribution<uint8_t> g_rng_char(' ','~');
-std::uniform_int_distribution<int> g_rng_height(0,Longan_nano::Screen::FRAME_BUFFER_HEIGHT-1);
-std::uniform_int_distribution<int> g_rng_width(0,Longan_nano::Screen::FRAME_BUFFER_WIDTH-1);
-std::uniform_int_distribution<uint8_t> g_rng_color(0, Longan_nano::Screen::PALETTE_SIZE);
+std::uniform_int_distribution<uint8_t> g_rng_char( ' ', '~' );
+std::uniform_int_distribution<int> g_rng_height( 0, Longan_nano::Screen::Config::FRAME_BUFFER_HEIGHT -1 );
+std::uniform_int_distribution<int> g_rng_width( 0, Longan_nano::Screen::Config::FRAME_BUFFER_WIDTH -1 );
+std::uniform_int_distribution<uint8_t> g_rng_color( 0, Longan_nano::Screen::Config::PALETTE_SIZE -1 );
 //String length reroll
-std::uniform_int_distribution<uint8_t> g_rng_length(0, MAX_STR_LEN);
+std::uniform_int_distribution<uint8_t> g_rng_length( 0, MAX_STR_LEN );
 
 //Scheduler for the tasks
 Scheduler g_scheduler = { 0 };
@@ -140,6 +147,12 @@ int main( void )
 
     //Systick timer used to schedule activities
     Longan_nano::Chrono my_timer;
+    //Systick timers to profile resource use
+    Longan_nano::Chrono timer_uptime;
+    Longan_nano::Chrono timer_screen;
+    Longan_nano::Chrono timer_demo;
+
+    
     //Display Driver
     Longan_nano::Screen g_screen;
     //elapsed time
@@ -148,8 +161,8 @@ int main( void )
     uint16_t scheduler_cnt = 0;
     uint16_t demo_pre = 100;
 
-    //Demo to be executed
-    Demo demo_index = Demo::TEST_CLEAR_BLINK;
+    //Default Demo to be executed
+    Demo demo_index = Demo::TEST_ENG_NUMBERS;
     //Demo is not initialized
     bool f_demo_init = false;
 
@@ -169,6 +182,8 @@ int main( void )
 
     //Snap start
     my_timer.start();
+    timer_uptime.start();
+    timer_screen.start();
 
     //----------------------------------------------------------------
     //	BODY
@@ -182,13 +197,12 @@ int main( void )
         //  Hardwired scheduler to release tasks
         //  Thanks to the Longan Nano SysTick timer there is no need to use peripherals for timekeeping
 
-        //Snap stop
-        my_timer.stop();
-        elapsed_us = my_timer.elapsed_us();
+        //Snap stop and get time since last start in microseconds
+        elapsed_us = my_timer.stop( Longan_nano::Chrono::Unit::microseconds );
         //If: for some reason, the timing is invalid. Algorithmic error
         if (elapsed_us < 0)
         {
-            Longan_nano::Leds::toggle( Longan_nano::Leds::Color::BLUE );
+            Longan_nano::Leds::set( Longan_nano::Leds::Color::BLUE );
         }
         //If: enough time has passed between screen executions
         else if (elapsed_us >= Config::SCREEN_US)
@@ -289,8 +303,12 @@ int main( void )
         {
             //Reset flag
             g_scheduler.f_screen = false;
+            //Snap start
+            timer_screen.start();
             //Execute a step in the screen update
             g_screen.update();
+            //Accumulate DeltaT into timer accumulator
+            timer_screen.accumulate();
         }
 
         //----------------------------------------------------------------
@@ -300,6 +318,9 @@ int main( void )
         //If: demo is authorized to execute
         if (g_scheduler.f_demo == true)
         {
+            //Profile time spent running the DEMO
+            timer_demo.start();
+
             //Clear execution flag
             g_scheduler.f_demo = false;
             
@@ -316,6 +337,7 @@ int main( void )
                     //If: demo is yet to be initialized
                     if (f_demo_init == false)
                     {
+                        g_screen.reset_colors();
                         //Clear the screen
                         g_screen.clear( Longan_nano::Screen::Color::BLACK );
                         //Configure prescaler to achieve the correct execution time    
@@ -343,6 +365,7 @@ int main( void )
                     //If: demo is yet to be initialized
                     if (f_demo_init == false)
                     {
+                        g_screen.reset_colors();
                         //Clear the screen
                         g_screen.clear( Longan_nano::Screen::Color::BLACK );
                         //Configure prescaler to achieve the correct execution time    
@@ -354,7 +377,7 @@ int main( void )
                     else
                     {
                         //Randomly generate character
-                        uint8_t char_tmp = g_rng_char( g_rng_engine );
+                        char char_tmp = g_rng_char( g_rng_engine );
                         int height_tmp = g_rng_height( g_rng_engine );
                         int width_tmp = g_rng_width( g_rng_engine );
                         //Ask the screen driver to print the character
@@ -374,6 +397,7 @@ int main( void )
                     //If: demo is yet to be initialized
                     if (f_demo_init == false)
                     {
+                        g_screen.reset_colors();
                         //Clear the screen
                         g_screen.clear( Longan_nano::Screen::Color::BLACK );
                         //Configure prescaler to achieve the correct execution time    
@@ -391,7 +415,7 @@ int main( void )
                         Longan_nano::Screen::Color background_tmp = (Longan_nano::Screen::Color)g_rng_color( g_rng_engine );
                         Longan_nano::Screen::Color foreground_tmp = (Longan_nano::Screen::Color)g_rng_color( g_rng_engine );
                         //Ask the screen driver to print the character
-                        g_screen.print( height_tmp, width_tmp, char_tmp,background_tmp, foreground_tmp );
+                        g_screen.print( height_tmp, width_tmp, (char)char_tmp,background_tmp, foreground_tmp );
                     }
                         
                     break;
@@ -407,6 +431,7 @@ int main( void )
                     //If: demo is yet to be initialized
                     if (f_demo_init == false)
                     {
+                        g_screen.reset_colors();
                         //Clear the screen
                         g_screen.clear( Longan_nano::Screen::Color::BLACK );
                         //Configure prescaler to achieve the correct execution time    
@@ -447,6 +472,7 @@ int main( void )
                     //If: demo is yet to be initialized
                     if (f_demo_init == false)
                     {
+                        g_screen.reset_colors();
                         //Clear the screen
                         g_screen.clear( Longan_nano::Screen::Color::BLACK );
                         //Configure prescaler to achieve the correct execution time    
@@ -479,6 +505,204 @@ int main( void )
                     }
                     break;
                 }
+
+                //----------------------------------------------------------------
+                //	TEST_NUMBERS
+                //----------------------------------------------------------------
+                //	Test writing numbers on screen using the number to string screen print
+                //  Profile execution times as well using the Chrono class
+                
+                case Demo::TEST_NUMBERS:
+                {
+                    //If: demo is yet to be initialized
+                    if (f_demo_init == false)
+                    {
+                        g_screen.reset_colors();
+                        //Clear the screen
+                        g_screen.clear( Longan_nano::Screen::Color::BLACK );
+                        //Configure prescaler to achieve the correct execution time    
+                        demo_pre = Config::MEDIUM_DEMO_US/Config::SCREEN_US;
+                        //Demo is now initialized
+                        f_demo_init = true;
+                    }
+                    //If: demo is initialized and can be run
+                    else
+                    {
+                        //Header
+                        g_screen.print( 0, 0, "DEMO: Numeric String" );
+                        //Demo counter
+                        static int demo_cnt = 0;
+                        demo_cnt++;
+                        //Show a counter left aligned
+                        g_screen.print( 1, 1, "Counter: " );
+                        g_screen.set_format( 8, Longan_nano::Screen::Format_align::ADJ_LEFT, Longan_nano::Screen::Format_format::NUM );
+                        g_screen.print( 1, 11, demo_cnt );
+                        //Show a counter right aligned
+                        g_screen.print( 2, 1, "Counter: " );
+                        g_screen.set_format( 8, Longan_nano::Screen::Format_align::ADJ_RIGHT, Longan_nano::Screen::Format_format::NUM );
+                        g_screen.print( 2, 19, demo_cnt );
+                        //Temp
+                        int tmp;
+                        //Show uptime in microseconds
+                        g_screen.print( 3, 1, "Uptime:" );
+                        g_screen.print( 3, 18, "mS" );
+                        g_screen.set_format( 10, Longan_nano::Screen::Format_align::ADJ_RIGHT, Longan_nano::Screen::Format_format::NUM );
+                        tmp = timer_uptime.stop( Longan_nano::Chrono::Unit::milliseconds );
+                        g_screen.print( 3, 17, tmp );
+                        //Show cpu time spent updating the screen
+                        g_screen.print( 4, 1, "Screen:" );
+                        g_screen.print( 4, 18, "mS" );
+                        tmp = timer_screen.get_accumulator( Longan_nano::Chrono::Unit::milliseconds );
+                        g_screen.print( 4, 17, tmp );
+                    }
+                    break;
+                }
+                
+                //----------------------------------------------------------------
+                //	TEST_ENG_NUMBERS
+                //----------------------------------------------------------------
+                //	Test writing numbers on screen using the number to string screen print
+                //  Profile execution times as well using the Chrono class
+                
+                case Demo::TEST_ENG_NUMBERS:
+                {
+                    //If: demo is yet to be initialized
+                    if (f_demo_init == false)
+                    {
+                        g_screen.reset_colors();
+                        //Clear the screen
+                        g_screen.clear( Longan_nano::Screen::Color::BLACK );
+                        //Configure prescaler to achieve the correct execution time    
+                        demo_pre = Config::MEDIUM_DEMO_US/Config::SCREEN_US;
+                        //Demo is now initialized
+                        f_demo_init = true;
+                    }
+                    //If: demo is initialized and can be run
+                    else
+                    {     
+                        int16_t num_sprites_changed = 0;
+                        //Header
+                        num_sprites_changed += g_screen.print( 0, 0, "DEMO: Profile eng" );
+                        num_sprites_changed = g_screen.print( 1, 4, "|Time[s]|CPU [%]" );
+                        //Show uptime in microseconds
+                        int tmp_uptime;
+                        num_sprites_changed += g_screen.print( 2, 0, "Time|" );
+                        num_sprites_changed += g_screen.print( 2, 12, '|' );
+                        g_screen.set_format( User::String::STRING_SIZE_SENG -1, Longan_nano::Screen::Format_align::ADJ_RIGHT, Longan_nano::Screen::Format_format::ENG );
+                        g_screen.set_eng_exp( -3 );
+                        tmp_uptime = timer_uptime.stop( Longan_nano::Chrono::Unit::milliseconds );
+                        num_sprites_changed += g_screen.print( 2, 11, tmp_uptime );
+                        
+                        //Show cpu time spent updating the screen
+                        int tmp_screen;
+                        num_sprites_changed += g_screen.print( 3, 0, "LCD |" );
+                        num_sprites_changed += g_screen.print( 3, 12, '|' );
+                        tmp_screen = timer_screen.get_accumulator( Longan_nano::Chrono::Unit::milliseconds );
+                        num_sprites_changed += g_screen.print( 3, 11, tmp_screen );
+                        //Compute CPU usage for the screen
+                        int64_t cpu_tmp = (int64_t)1 *tmp_screen *100000 /tmp_uptime;
+                        g_screen.set_eng_exp( -3 );
+                        num_sprites_changed += g_screen.print( 3, 19, (int)cpu_tmp );
+
+                        //Show CPU time spent running the DEMO
+                        num_sprites_changed += g_screen.print( 4, 0, "DEMO|" );
+                        num_sprites_changed += g_screen.print( 4, 12, '|' );
+                        tmp_screen = timer_demo.get_accumulator( Longan_nano::Chrono::Unit::milliseconds );
+                        g_screen.print( 4, 11, tmp_screen );
+                        //Compute CPU usage for the DEMO
+                        cpu_tmp = (int64_t)1 *tmp_screen *100000 /tmp_uptime;
+                        g_screen.set_eng_exp( -3 );
+                        num_sprites_changed += g_screen.print( 4, 19, (int)cpu_tmp );
+
+                        //Profile the number of sprites updated by the previous functions
+                        g_screen.set_format( 4, Longan_nano::Screen::Format_align::ADJ_LEFT, Longan_nano::Screen::Format_format::NUM );
+                        g_screen.print( 1, 0, num_sprites_changed);
+                    }
+                    break;
+                }
+
+                //----------------------------------------------------------------
+                //	TEST_CHANGE_COLORS
+                //----------------------------------------------------------------
+                //	Test the methods that handles the colors of the sprites without changing the content
+                //  "change_color" change a palette color for another
+                //  "set_palette_color"
+                
+                case Demo::TEST_CHANGE_COLORS:
+                {
+                    static uint8_t background_change_cnt;
+
+                    //Randomly change the defaults background and foreground colors
+                    Longan_nano::Screen::Color background_tmp = (Longan_nano::Screen::Color)g_rng_color( g_rng_engine );
+                    Longan_nano::Screen::Color foreground_tmp = (Longan_nano::Screen::Color)g_rng_color( g_rng_engine );
+
+                    //If: demo is yet to be initialized
+                    if (f_demo_init == false)
+                    {
+                        g_screen.reset_colors();
+                        //Clear the screen
+                        g_screen.clear( Longan_nano::Screen::Color::BLACK );
+                        //Configure prescaler to achieve the correct execution time    
+                        demo_pre = Config::MEDIUM_DEMO_US/Config::SCREEN_US;
+                        //Demo is now initialized
+                        f_demo_init = true;
+                    }
+                    //If: demo is initialized and can be run
+                    else
+                    {
+                        int16_t num_sprites_changed = 0;
+                        //Header
+                        num_sprites_changed += g_screen.print( 0, 0, "DEMO: Eng Num Color" );
+                        num_sprites_changed = g_screen.print( 1, 4, "|Time[s]|CPU [%]" );
+                        //Show uptime in microseconds
+                        int tmp_uptime;
+                        num_sprites_changed += g_screen.print( 2, 0, "Time|" );
+                        num_sprites_changed += g_screen.print( 2, 12, '|' );
+                        g_screen.set_format( User::String::STRING_SIZE_SENG -1, Longan_nano::Screen::Format_align::ADJ_RIGHT, Longan_nano::Screen::Format_format::ENG );
+                        g_screen.set_eng_exp( -3 );
+                        tmp_uptime = timer_uptime.stop( Longan_nano::Chrono::Unit::milliseconds );
+                        num_sprites_changed += g_screen.print( 2, 11, tmp_uptime );
+                        
+                        //Show cpu time spent updating the screen
+                        int tmp_screen;
+                        num_sprites_changed += g_screen.print( 3, 0, "LCD |" );
+                        num_sprites_changed += g_screen.print( 3, 12, '|' );
+                        tmp_screen = timer_screen.get_accumulator( Longan_nano::Chrono::Unit::milliseconds );
+                        num_sprites_changed += g_screen.print( 3, 11, tmp_screen );
+                        //Compute CPU usage for the screen
+                        int64_t cpu_tmp = (int64_t)1 *tmp_screen *100000 /tmp_uptime;
+                        g_screen.set_eng_exp( -3 );
+                        num_sprites_changed += g_screen.print( 3, 19, (int)cpu_tmp );
+
+                        //Show CPU time spent running the DEMO
+                        num_sprites_changed += g_screen.print( 4, 0, "DEMO|" );
+                        num_sprites_changed += g_screen.print( 4, 12, '|' );
+                        tmp_screen = timer_demo.get_accumulator( Longan_nano::Chrono::Unit::milliseconds );
+                        g_screen.print( 4, 11, tmp_screen );
+                        //Compute CPU usage for the DEMO
+                        cpu_tmp = (int64_t)1 *tmp_screen *100000 /tmp_uptime;
+                        g_screen.set_eng_exp( -3 );
+                        num_sprites_changed += g_screen.print( 4, 19, (int)cpu_tmp );
+
+
+                        //Randomly color a sprite
+                        background_tmp = (Longan_nano::Screen::Color)g_rng_color( g_rng_engine );
+                        foreground_tmp = (Longan_nano::Screen::Color)g_rng_color( g_rng_engine );
+
+                        background_change_cnt++;
+                        if (background_change_cnt > 15)
+                        {
+                            background_change_cnt = 0;
+                            num_sprites_changed += g_screen.set_default_colors( background_tmp, foreground_tmp );                            
+                        }
+
+                        //Profile the number of sprites updated by the previous functions
+                        g_screen.set_format( 4, Longan_nano::Screen::Format_align::ADJ_LEFT, Longan_nano::Screen::Format_format::NUM );
+                        g_screen.print( 1, 0, num_sprites_changed);
+
+                    }
+                    break;
+                }
                 //Unhandled demo
                 default:
                 {
@@ -486,7 +710,8 @@ int main( void )
 
                 }
             }   //End Switch: for each demo
-
+            //Profile time spent running the DEMO
+            timer_demo.accumulate();
         }	//End If: demo is authorized to execute
 
     } //End forever
@@ -509,26 +734,26 @@ int main( void )
 
 void init_pa8_button_interrupt( void )
 {
-	//Clock the GPIO banks
-	rcu_periph_clock_enable(RCU_GPIOA);
-	//Setup the boot button
-	gpio_init( GPIOA, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_50MHZ, GPIO_PIN_8 );
+    //Clock the GPIO banks
+    rcu_periph_clock_enable(RCU_GPIOA);
+    //Setup the boot button
+    gpio_init( GPIOA, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_50MHZ, GPIO_PIN_8 );
 
-	//Initialize the ECLIC IRQ lines
-	eclic_priority_group_set(ECLIC_PRIGROUP_LEVEL3_PRIO1);
-	eclic_irq_enable(EXTI5_9_IRQn, 1, 1);
+    //Initialize the ECLIC IRQ lines
+    eclic_priority_group_set(ECLIC_PRIGROUP_LEVEL3_PRIO1);
+    eclic_irq_enable(EXTI5_9_IRQn, 1, 1);
 
-	//Initialize the EXTI. IRQ can be generated from GPIO edge detectors
-	gpio_exti_source_select(GPIO_PORT_SOURCE_GPIOA, GPIO_PIN_SOURCE_8);
-	exti_init(EXTI_8, EXTI_INTERRUPT, EXTI_TRIG_BOTH);
+    //Initialize the EXTI. IRQ can be generated from GPIO edge detectors
+    gpio_exti_source_select(GPIO_PORT_SOURCE_GPIOA, GPIO_PIN_SOURCE_8);
+    exti_init(EXTI_8, EXTI_INTERRUPT, EXTI_TRIG_BOTH);
 
-	//Clear interrupt flag. Ensure no spurious execution at start
-	exti_interrupt_flag_clear(EXTI_8);
+    //Clear interrupt flag. Ensure no spurious execution at start
+    exti_interrupt_flag_clear(EXTI_8);
 
-	//Enable the interrupts. From now on interrupt handlers can be executed
-	eclic_global_interrupt_enable();	
+    //Enable the interrupts. From now on interrupt handlers can be executed
+    eclic_global_interrupt_enable();	
 
-	return;
+    return;
 }   //End init: init_pa8_button_interrupt | void
 
 /****************************************************************************
@@ -543,21 +768,21 @@ void init_pa8_button_interrupt( void )
 extern "C"
 void EXTI5_9_IRQHandler( void )
 {
-	//If: interrupt from PA8 boot button
-	if (exti_interrupt_flag_get(EXTI_8) != RESET)
-	{
-		//Clear the interrupt from PA8 boot button
-		exti_interrupt_flag_clear(EXTI_8);
+    //If: interrupt from PA8 boot button
+    if (exti_interrupt_flag_get(EXTI_8) != RESET)
+    {
+        //Clear the interrupt from PA8 boot button
+        exti_interrupt_flag_clear(EXTI_8);
         //If: the button is released after ISR (UP)
         if (gpio_input_bit_get( GPIOA, GPIO_PIN_8 ) == RESET)
         {
             //Signal event
             g_f_pa8_button_up = true;
         }
-	}
-	//Default: interrupt from an unhandled GPIO
-	else
-	{
-		//Do nothing (should clear the interrupt flags)
-	}
+    }
+    //Default: interrupt from an unhandled GPIO
+    else
+    {
+        //Do nothing (should clear the interrupt flags)
+    }
 }   //End isr: EXTI5_9_IRQHandler | void

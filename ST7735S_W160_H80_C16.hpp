@@ -230,7 +230,7 @@ class Display
 
         ~Display( void )
         {
-
+            
             //----------------------------------------------------------------
             //	RETURN
             //----------------------------------------------------------------
@@ -272,10 +272,10 @@ class Display
             this -> rst_active();	
             this -> cs_inactive();
 
-            Longan_nano::Chrono::delay_ms( 1 );
+            Longan_nano::Chrono::delay( Longan_nano::Chrono::Unit::milliseconds, 1 );
             this -> rst_inactive();
             
-            Longan_nano::Chrono::delay_ms( 5 );
+            Longan_nano::Chrono::delay( Longan_nano::Chrono::Unit::milliseconds, 5 );
 
             // Deinit SPI and DMA.
             spi_i2s_deinit(Config::SPI_CH);

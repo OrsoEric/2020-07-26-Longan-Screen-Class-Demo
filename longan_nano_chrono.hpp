@@ -1,25 +1,33 @@
 /**********************************************************************************
-MIT License
+BSD 3-Clause License
 
-Copyright (c) 2020 Orso Eric
+Copyright (c) 2020, Orso Eric
+All rights reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its
+   contributors may be used to endorse or promote products derived from
+   this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 **********************************************************************************/
 
 /**********************************************************************************
@@ -71,15 +79,25 @@ namespace Longan_nano
 //! @class 		Chrono
 /************************************************************************************/
 //!	@author		Orso Eric
-//! @version	2020-07-20
-//! @brief		Chrono. Deals with busy delays and timestamps. Use SysTick timer.
+//! @version	2020-07-28
+//! @brief		Deals with busy delays, elapsed time and accumulated time
 //! @bug		None
-//! @copyright	MIT 2020 Orso Eric
+//! @copyright	BSD 3-Clause License Copyright (c) 2020, Orso Eric
 //! @details
 //!	SysTick
-//!	History Version \n
-//! 	2020-07-20\n
+//!	Use 64b 27MHz SysTick timer.
+//!	History Version
+//! 	2020-07-20
 //!	Rework Utils library into Chrono library to add start/stop timer
+//!	"start" snaps the start timestamp at full resolution
+//!	"stop" snaps the stop timestamp at full resolution
+//!	"elapsed" returns the elapsed time between stop and start if valid. zero otherwise
+//!		2020-07-28
+//!	I need a method to accumulate execution time and profile how long an activity has taken
+//!	"accumulate" add stop-start to an internal accumulator at full resolution
+//!	Add combined "stop" "elapsed" implementation with better performance and fewer calls needed
+//! I can combine the stop and accumulator counters since i use one or the other
+//! I use a flag to handle initialization and invalid when switching between modes and automatically reset the accumulator
 /************************************************************************************/
 
 class Chrono
@@ -93,10 +111,17 @@ class Chrono
         //Configurations of the SysTick
         typedef enum _Config
         {
-            systick_invalid	= (uint64_t)0xffffffff,				//Invalid timer value
-            pre 			= 4,								//Prescaler for the systick timer
-            pedantic_checks	= false,							//Pedantic checks inside the functions
+            PEDANTIC_CHECKS	= false,				//Pedantic checks inside the functions
+            SYSTICK_INVALID	= 0xFFFFFFFF,	//Invalid timer value
+            SYSTICK_PRE 	= 4,					//Prescaler for the systick timer
+            TIME_INVALID	= -1,					//Return time in case time is invalid
         } Config;
+        //What time unit to use
+        typedef enum _Unit
+        {
+            milliseconds,
+            microseconds,
+        } Unit;
 
         //--------------------------------------------------------------------------
         //	CONSTRUCTORS
@@ -108,14 +133,16 @@ class Chrono
         /***************************************************************************/
         //! @return void
         //! @details \n
-        //!	Initialize timer to invalid
+        //!	Initialize timestamps to invalid
         /***************************************************************************/
         
         Chrono( void )
         {
-            //Initialize timer to invalid
-            this -> g_systick_start	= Config::systick_invalid;
-            this -> g_systick_stop	= Config::systick_invalid;
+            //Initialize timestamps to invalid
+            this -> g_systick_start = Config::SYSTICK_INVALID;
+            this -> g_systick_stop = Config::SYSTICK_INVALID;
+            //Regular timer mode
+            this -> g_f_accumulator_mode = false;
             
             //----------------------------------------------------------------
             //	RETURN
@@ -194,6 +221,8 @@ class Chrono
             
             //Snap timer start
             this -> g_systick_stop = get_timer_value();
+            //Regular timer mode
+            this -> g_f_accumulator_mode = false;
             
             //----------------------------------------------------------------
             //	RETURN
@@ -201,98 +230,241 @@ class Chrono
             
             return;
         }	//End setter: stop | void
-
-        //--------------------------------------------------------------------------
-        //	GETTERS
-        //--------------------------------------------------------------------------
-
+        
         /***************************************************************************/
         //!	@brief public setter
-        //!	elapsed_ms | void
+        //!	stop | Unit |
+        /***************************************************************************/
+        //!	@param unit
+        //! @return void
+        //! @details \n
+        //!	Stop the timer. Snap the stop time
+        //!	Return the elapsed time between stop and start in the given unit
+        /***************************************************************************/
+
+        int32_t stop( Unit unit )
+        {
+            //----------------------------------------------------------------
+            //	CHECK
+            //----------------------------------------------------------------
+            
+            //Get start time
+            uint64_t start_tmp = this -> g_systick_start;
+            //If: bad timestamp
+            if ((Config::PEDANTIC_CHECKS == true) && (start_tmp == Config::SYSTICK_INVALID))
+            {
+                return Config::TIME_INVALID; //FAIL
+            }
+            
+            //----------------------------------------------------------------
+            //	BODY
+            //----------------------------------------------------------------		
+            
+            //Snap the timestamp
+            uint64_t stop_tmp = get_timer_value();
+            //Record the stop timestamp inside the timer
+            this -> g_systick_stop = stop_tmp;
+            //Regular timer mode
+            this -> g_f_accumulator_mode = false;
+
+            //----------------------------------------------------------------
+            //	RETURN
+            //----------------------------------------------------------------
+            //return elapsed time
+            return this -> compute_elapsed( start_tmp, stop_tmp, unit );
+        }	//End setter: stop | Unit |
+
+        /***************************************************************************/
+        //!	@brief public method
+        //!	accumulate | void |
+        /***************************************************************************/
+        //! @return unsigned int | frequency of the SysTick timer
+        //! @details \n
+        //! Snap the stop time
+        //!	Accumulate the difference between stop and start inside the accumulator
+        //! Swap the stop and start, invalidate the stop. Prepare for next cycle
+        //! Use stop counter as accumulator
+        //! If timer was in timer mode, reset the accumulator
+        /***************************************************************************/
+
+        bool accumulate( void )
+        {
+            //----------------------------------------------------------------
+            //	CHECK
+            //----------------------------------------------------------------
+            
+            //Get start time
+            uint64_t start_tmp = this -> g_systick_start;
+            //If: bad timestamp
+            if ((Config::PEDANTIC_CHECKS == true) && (start_tmp == Config::SYSTICK_INVALID))
+            {
+                return true; //FAIL
+            }
+            //Temp accumulator
+            uint64_t accumulator_tmp;
+            //if: Regular timer mode
+            if (this -> g_f_accumulator_mode == false)
+            {
+                //reset the accumulator
+                accumulator_tmp = 0;
+                //go into accumulator mode
+                this -> g_f_accumulator_mode = true;
+            }
+            //If: accumulator mode
+            else
+            {
+                //Fetch the current accumulator count
+                accumulator_tmp = this -> g_systick_stop;
+            }
+        
+            //----------------------------------------------------------------
+            //	BODY
+            //----------------------------------------------------------------
+
+            //Snap the timestamp
+            uint64_t stop_tmp = get_timer_value();
+            //Record the stop timestamp inside the start timestamp and invalidate the stop timestamp
+            this -> g_systick_start = stop_tmp;
+            //Accumulate the DeltaT inside the accumulator at full resolution
+            accumulator_tmp += stop_tmp -start_tmp;
+            //Store the accumulator value
+            this -> g_systick_stop = accumulator_tmp;
+
+            //----------------------------------------------------------------
+            //	RETURN
+            //----------------------------------------------------------------
+            
+            return false; //OK
+        }	//End public method: accumulate | void |
+        
+        /***************************************************************************/
+        //!	@brief public method
+        //!	accumulate | Unit unit |
+        /***************************************************************************/
+        //! @return unsigned int | frequency of the SysTick timer
+        //! @details \n
+        //! Snap the stop time
+        //!	Accumulate the difference between stop and start inside the accumulator
+        //! Swap the stop and start, invalidate the stop. Prepare for next cycle
+        /***************************************************************************/
+
+        int32_t accumulate( Unit unit )
+        {
+            //----------------------------------------------------------------
+            //	CHECK
+            //----------------------------------------------------------------
+            
+            //Get start time
+            uint64_t start_tmp = this -> g_systick_start;
+            //If: bad timestamp
+            if ((Config::PEDANTIC_CHECKS == true) && (start_tmp == Config::SYSTICK_INVALID))
+            {
+                return true; //FAIL
+            }
+            //Temp accumulator
+            uint64_t accumulator_tmp;
+            //if: Regular timer mode
+            if (this -> g_f_accumulator_mode == false)
+            {
+                //reset the accumulator
+                accumulator_tmp = 0;
+                //go into accumulator mode
+                this -> g_f_accumulator_mode = true;
+            }
+            //If: accumulator mode
+            else
+            {
+                //Fetch the current accumulator count
+                accumulator_tmp = this -> g_systick_stop;
+            }
+        
+            //----------------------------------------------------------------
+            //	BODY
+            //----------------------------------------------------------------
+
+            //Snap the timestamp
+            uint64_t stop_tmp = get_timer_value();
+            //Record the stop timestamp inside the start timestamp and invalidate the stop timestamp
+            this -> g_systick_start = stop_tmp;
+            //Accumulate the DeltaT inside the accumulator at full resolution
+            accumulator_tmp += stop_tmp -start_tmp;
+            //Store the accumulator value
+            this -> g_systick_stop = accumulator_tmp;
+
+            //----------------------------------------------------------------
+            //	RETURN
+            //----------------------------------------------------------------
+            
+            return this -> compute_accumulator( accumulator_tmp, unit );
+        }	//End public method: accumulate | void |
+
+        /***************************************************************************/
+        //!	@brief public getter
+        //!	get_elapsed | Unit |
         /***************************************************************************/
         //! @return int | elapsed milliseconds. negative mean the timer was uninitialized
         //! @details \n
         //!	Time elapsed between start and stop
         /***************************************************************************/
 
-        int elapsed_ms( void )
+        int32_t get_elapsed( Unit unit )
         {
             //----------------------------------------------------------------
             //	VARS
-            //----------------------------------------------------------------		
-            
-            uint64_t systick_tmp;
-            int ret;
-            //Ticks required to count 1uS
-            int numticks_ms		= SystemCoreClock /1000 /pre;	
-            
             //----------------------------------------------------------------
-            //	BODY
-            //----------------------------------------------------------------		
+
+            //Fetch timestamps
+            uint64_t start_tmp = this -> g_systick_start;
+            uint64_t stop_tmp = this -> g_systick_stop;
+
+            //----------------------------------------------------------------
+            //	CHECKS
+            //----------------------------------------------------------------
             
             //If: a timetamp is invalid
-            if ((this -> g_systick_start == Config::systick_invalid) || (this -> g_systick_stop == Config::systick_invalid))
+            if ((start_tmp == Config::SYSTICK_INVALID) || (stop_tmp == Config::SYSTICK_INVALID))
             {
-                return -1;	//Invalid
+                return Config::TIME_INVALID;	//Invalid
             }
-            
-            //Compute DeltaT
-            systick_tmp = this -> g_systick_stop -this -> g_systick_start;
-            //@todo: add rounding
-            //Compute elapsed time in ms
-            systick_tmp /= numticks_ms;
-            ret = systick_tmp;
-            
+            //If: accumulator mode
+            if (this -> g_f_accumulator_mode == true)
+            {
+                return Config::TIME_INVALID;	//Invalid
+            }
+
             //----------------------------------------------------------------
             //	RETURN
             //----------------------------------------------------------------
-            
-            return ret;
-        }	//End setter: elapsed_ms | void
+            //return elapsed time
+            return compute_elapsed( start_tmp, start_tmp, unit );
+        }	//End public getter: get_elapsed |  Unit |
 
         /***************************************************************************/
-        //!	@brief public setter
-        //!	elapsed_us | void
+        //!	@brief public getter
+        //!	get_accumulator | Unit |
         /***************************************************************************/
-        //! @return int | elapsed microseconds. negative mean the timer was uninitialized
+        //! @return int | accumulators. negative mean the timer was uninitialized
         //! @details \n
-        //!	Time elapsed between start and stop
+        //!	return the DeltaT accumulated by the accumulate function in the given time unit
         /***************************************************************************/
 
-        int elapsed_us( void )
+        inline int32_t get_accumulator( Unit unit )
         {
             //----------------------------------------------------------------
-            //	VARS
-            //----------------------------------------------------------------		
-            
-            uint64_t systick_tmp;
-            int ret;
-            //Ticks required to count 1uS
-            int numticks_us		= SystemCoreClock /1000000 /pre;	
-            
+            //	CHECK
             //----------------------------------------------------------------
-            //	BODY
-            //----------------------------------------------------------------		
-            
-            //If: a timetamp is invalid
-            if ((this -> g_systick_start == Config::systick_invalid) || (this -> g_systick_stop == Config::systick_invalid))
+            //If: accumulator mode
+            if (this -> g_f_accumulator_mode == false)
             {
-                return -1;	//Invalid
+                return Config::TIME_INVALID;	//Invalid
             }
-            
-            //Compute DeltaT
-            systick_tmp = this -> g_systick_stop -this -> g_systick_start;
-            //@todo: add rounding
-            //Compute elapsed time in ms
-            systick_tmp /= numticks_us;
-            ret = systick_tmp;
-            
+
             //----------------------------------------------------------------
             //	RETURN
             //----------------------------------------------------------------
-            
-            return ret;
-        }	//End setter: elapsed_us | void
+            //return accumulated time
+            return this -> compute_accumulator( this -> g_systick_stop, unit );
+        }	//End public getter: get_elapsed |  Unit |
 
         /***************************************************************************/
         //!	@brief public static method
@@ -309,7 +481,7 @@ class Chrono
             //	RETURN
             //----------------------------------------------------------------
             
-            return SystemCoreClock /Config::pre;
+            return SystemCoreClock /Config::SYSTICK_PRE;
         }	//End static method: get_systick_freq | void
 
         //--------------------------------------------------------------------------
@@ -326,9 +498,9 @@ class Chrono
 
         /***************************************************************************/
         //!	@brief public static method
-        //!	delay_ms | unsigned int
+        //!	delay | Unit | unsigned int |
         /***************************************************************************/
-        //!	@param delay_ms | unsigned int | how long to wait for in milliseconds
+        //!	@param delay | unsigned int | how long to wait for in milliseconds
         //! @return void |
         //! @details \n
         //!	Use the SysTick timer counter to busy wait for the correct number of microseconds
@@ -336,7 +508,7 @@ class Chrono
         //!	SystemCoreClock defines the frequency of the CPU in Hz
         /***************************************************************************/
 
-        static void delay_ms( unsigned int delay_ms )
+        static bool delay( Unit unit, unsigned int delay_tmp )
         {
             //----------------------------------------------------------------
             //	VARS
@@ -347,7 +519,12 @@ class Chrono
             //Compute final timestamp
             uint64_t systick_stop;
             //Ticks required to count 1mS
-            int numticks_ms		= SystemCoreClock /1000 /pre;	
+            uint32_t numticks = compute_tick_per_time_unit( unit );
+            //If: bad unit
+            if (numticks == 0)
+            {
+                return true; //fail
+            }
 
             //----------------------------------------------------------------
             //	BODY
@@ -357,7 +534,7 @@ class Chrono
             //Snap start
             systick_stop = get_timer_value();
             //Compute stop time. 
-            systick_stop += (uint64_t)numticks_ms *delay_ms;
+            systick_stop += numticks *delay_tmp;
             //Wait an additional tick for current tick
             systick_stop++;
             //Busy wait for time to pass
@@ -372,72 +549,31 @@ class Chrono
             //	RETURN
             //----------------------------------------------------------------
 
-            return;
-        }	//End static method: delay_ms | unsigned int
+            return false; //OK
+        }	//End public static method: delay | Unit | unsigned int |
 
         /***************************************************************************/
         //!	@brief public static method
-        //!	delay_us | unsigned int
+        //!	delay | unsigned int |
         /***************************************************************************/
-        //!	@param delay_us | unsigned int | how long to wait for in microseconds
+        //!	@param delay | unsigned int | how long to wait for in milliseconds
         //! @return void |
         //! @details \n
-        //!	Use the SysTick timer counter to busy wait for the correct number of microseconds
-        //!	The CPU SysTick timer is clocked by the ABH clock/4 = 27MHz
-        //!	SystemCoreClock defines the frequency of the CPU in Hz
+        //! wrapper of delay
+        //! its assumed that without arguments the user want a millisecond busy delay function
         /***************************************************************************/
 
-        static void delay_us( unsigned int delay_us )
+        static inline bool delay( unsigned int delay_tmp )
         {
-            //----------------------------------------------------------------
-            //	VARS
-            //----------------------------------------------------------------
-
-            //Temp timestamp
-            uint64_t systick_tmp;
-            //Compute final timestamp
-            uint64_t systick_stop;
-            //Ticks required to count 1uS
-            int numticks_us		= SystemCoreClock /1000000 /pre;	
-
-            //----------------------------------------------------------------
-            //	BODY
-            //----------------------------------------------------------------
-            //	Wait for the correct number of ticks
-
-            //Snap start
-            systick_stop = get_timer_value();
-            //Compute stop time. 
-            systick_stop += (uint64_t)numticks_us *delay_us;
-            //Wait an additional tick for current tick
-            systick_stop++;
-            //Busy wait for time to pass
-            do
-            {
-                //Snap timestamp
-                systick_tmp = get_timer_value();
-            }
-            while( systick_tmp < systick_stop );
-
             //----------------------------------------------------------------
             //	RETURN
             //----------------------------------------------------------------
 
-            return;
-        }	//End static method: delay_us | unsigned int
+            return delay( Longan_nano::Chrono::Unit::milliseconds, (unsigned int)delay_tmp );
+        }	//End public static method: delay | unsigned int |
 
         //--------------------------------------------------------------------------
         //	PUBLIC VARS
-        //--------------------------------------------------------------------------
-
-    //Visible to derived classes
-    protected:
-        //--------------------------------------------------------------------------
-        //	PROTECTED METHODS
-        //--------------------------------------------------------------------------
-
-        //--------------------------------------------------------------------------
-        //	PROTECTED VARS
         //--------------------------------------------------------------------------
 
     //Visible only inside the class
@@ -446,12 +582,149 @@ class Chrono
         //	PRIVATE METHODS
         //--------------------------------------------------------------------------
 
+        /***************************************************************************/
+        //!	@brief private method
+        //!	compute_tick_per_time_unit | Unit |
+        /***************************************************************************/
+        //! @return uint32_t | number of systick counts needed to count one time unit
+        //! @details
+        //!	Compute the number of systick counts needed to count one time unit
+        /***************************************************************************/
+
+        static inline uint32_t compute_tick_per_time_unit( Unit unit )
+        {
+            //----------------------------------------------------------------
+            //	BODY
+            //----------------------------------------------------------------
+            //	Compute del
+
+            //Switch: Time unit
+            switch( unit )
+            {
+                case Unit::milliseconds:
+                {
+                    return SystemCoreClock /1000 /Config::SYSTICK_PRE;
+                    break;
+                }
+                case Unit::microseconds:
+                {
+                    return SystemCoreClock /1000000 /Config::SYSTICK_PRE;
+                    break;
+                }
+                //Unhandled time unit
+                default:
+                {
+                    return 0;   //Invalid number of systick counts. Using it will yield infinite time
+                }
+            };	//End switch: Time unit
+
+            //----------------------------------------------------------------
+            //	RETURN
+            //----------------------------------------------------------------
+
+            return 0;   //Invalid number of systick counts. Using it will yield infinite time
+        }	//End private method: compute_tick_per_time_unit | Unit |
+
+        /***************************************************************************/
+        //!	@brief private method
+        //!	compute_elapsed | uint64_t | uint64_t | Unit |
+        /***************************************************************************/
+        //! @return int32_t | negative = invalid | zero or positive = elapsed time in the given time unit
+        //! @details \n
+        //!	use start and stop timestamp to compute the elapsed time in a given time unit
+        /***************************************************************************/
+
+        inline int32_t compute_elapsed( uint64_t start, uint64_t stop, Unit unit )
+        {
+            //----------------------------------------------------------------
+            //	VARS
+            //----------------------------------------------------------------
+
+            //If: causality violation
+            if ((Config::PEDANTIC_CHECKS == true) && (start > stop))
+            {
+                //Hopefully the timestamps are wrong and the universe still works as intended
+                return Config::TIME_INVALID; //FAIL
+            }
+            
+            //----------------------------------------------------------------
+            //	BODY
+            //----------------------------------------------------------------		
+            
+            //SysTick counts in one time unit
+            uint32_t numticks_time_unit = this -> compute_tick_per_time_unit( unit );
+            //If: bad unit was provided
+            if ((Config::PEDANTIC_CHECKS == true) && (numticks_time_unit == 0))
+            {
+                return TIME_INVALID;
+            }
+            //Compute DeltaT in system ticks as stop-start
+            uint64_t deltat = stop -start;
+            //Compute DeltaT in time units
+            deltat /= numticks_time_unit;
+            //Demote
+            int32_t ret = deltat;
+
+            //----------------------------------------------------------------
+            //	RETURN
+            //----------------------------------------------------------------
+
+            return ret;
+        }	//End private method: compute_elapsed | uint64_t | uint64_t | Unit |
+
+        /***************************************************************************/
+        //!	@brief private method
+        //!	compute_accumulator | uint64_t | Unit |
+        /***************************************************************************/
+        //! @return int32_t | negative = invalid | zero or positive = elapsed time in the given time unit
+        //! @details \n
+        //!	use start and stop timestamp to compute the elapsed time in a given time unit
+        /***************************************************************************/
+
+        int32_t compute_accumulator( uint64_t accumulator, Unit unit )
+        {
+            //----------------------------------------------------------------
+            //	VARS
+            //----------------------------------------------------------------
+
+            //If: accumulator
+            if ((Config::PEDANTIC_CHECKS == true) && (accumulator == Config::SYSTICK_INVALID))
+            {
+                return TIME_INVALID;
+            }
+            
+            //----------------------------------------------------------------
+            //	BODY
+            //----------------------------------------------------------------		
+            
+            //SysTick counts in one time unit
+            uint32_t numticks_time_unit = this -> compute_tick_per_time_unit( unit );
+            //If: bad unit was provided
+            if ((Config::PEDANTIC_CHECKS == true) && (numticks_time_unit == 0))
+            {
+                return TIME_INVALID;
+            }
+            //Compute DeltaT in time units
+            accumulator /= numticks_time_unit;
+            //Demote
+            int32_t ret = accumulator;
+
+            //----------------------------------------------------------------
+            //	RETURN
+            //----------------------------------------------------------------
+
+            return ret;
+        }	//End private method: compute_accumulator | uint64_t | Unit |
+
         //--------------------------------------------------------------------------
         //	PRIVATE VARS
         //--------------------------------------------------------------------------
 
+        //true = accumulator mode | false = regular start stop mode
+        bool g_f_accumulator_mode;
         //Systick Timestamps
         uint64_t g_systick_start;
+        //Combined stop and accumulator counter
         uint64_t g_systick_stop;
 };	//End Class: Chrono
 

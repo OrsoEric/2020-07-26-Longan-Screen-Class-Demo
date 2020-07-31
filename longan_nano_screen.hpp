@@ -43,7 +43,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //String manipulation
 #include <cstring>
+//Display driver. Physical interface and microcontroller peripherals.
 #include "ST7735S_W160_H80_C16.hpp"
+//Number -> string
+#include "embedded_string.hpp"
 
 /**********************************************************************************
 **	DEBUG
@@ -131,11 +134,11 @@ namespace Longan_nano
 //! @class 		Dummy
 /*********************************************************************************/
 //!	@author		Orso Eric
-//! @version	0.1 alpha
-//! @date		2019/05
+//! @version	2020-07-26
+//! @date		2020-07-09
 //! @brief		Longan Nano Screen Class
-//! @warning	No warnings
-//! @copyright	MIT 2020 Orso Eric
+//! @warning	None
+//! @copyright	BSD 3-Clause License Copyright (c) 2020, Orso Eric
 //! @todo       an ascii character with same background as foreground should be handled as a solid color sprite
 //! @details
 //!	Verbose description
@@ -168,7 +171,25 @@ namespace Longan_nano
 //!     2020-07-26
 //! Test print string functions: SUCCESS
 //! Change architecture: do not use RTC ISR but use chrono class for timings. Save a peripheral and achieve a mini hardwired scheduler. PA8 release button switches between demos: SUCCESS
-//! 
+//!     2020-07-27
+//! print number with format
+//! User::String class handles number to string conversion up to 32b signed and unsigned
+//!     2020-07-28
+//! tested print numbers with format: SUCCESS
+//! bugfix: check that the number fits than the allowed size. Caused dot artifacts on screen
+//!     2020-07-29
+//! "change_color" allow to change the color of all sprites from one to another. E.G. red background to blue background
+//! "set_default_colors" allow to set the default background and foreground colors to be used. Change all the sprites that use those colors as well
+//! "set_palette_color" change a color in the palette. Mark all the sprites that use those colors for update
+//!     2020-07-30
+//! color methods
+//!     2020-07-31
+//! change color demo
+//! with this release, I have a working screen library that does all I need it to do with 2.804% CPU usage at 100uS slice time
+//! I will add to this library as i work on the end applications and find bugs and shortcomings
+//! BUGFIX: print string had a botched same sprite detection 0.18% absolute performance improvement
+//! Now print number won't refresh sprites that have not changed
+//! Migrated print functions to return the number of updated sprites. -1 if error
 /*********************************************************************************/
 
 class Screen : Longan_nano::Display
@@ -200,7 +221,7 @@ class Screen : Longan_nano::Display
             //Colors are discretized in a palette
             PALETTE_SIZE			= 16,           //Size of the palette
             PALETTE_SIZE_BIT		= 4,			//Number of bit required to describe a color in the palette
-            //Size of the frame buffer
+            //Size of the frame buffer. Display phisical size comes from the Physical Display class
             FRAME_BUFFER_WIDTH		= Longan_nano::Display::Config::WIDTH /SPRITE_WIDTH,
             FRAME_BUFFER_HEIGHT		= Longan_nano::Display::Config::HEIGHT /SPRITE_HEIGHT,
             FRAME_BUFFER_SIZE		= FRAME_BUFFER_WIDTH *FRAME_BUFFER_HEIGHT,
@@ -236,6 +257,19 @@ class Screen : Longan_nano::Display
             CHECKER_BACKGROUND,
             CHECKER_FOREGROUND,
         } Symbol;
+
+        //Possible number configurations
+        typedef enum _Format_format
+        {
+            NUM,        //Extended number
+            ENG,        //Engineering format with four significant digits and SI suffix
+        } Format_format;
+        //Left or Right alignment for a number
+        typedef enum _Format_align
+        {
+            ADJ_LEFT,
+            ADJ_RIGHT,
+        } Format_align;
 
         /*********************************************************************************************************************************************************
         **********************************************************************************************************************************************************
@@ -303,14 +337,14 @@ class Screen : Longan_nano::Display
             return;
         }
 
-         /*********************************************************************************************************************************************************
+        /*********************************************************************************************************************************************************
         **********************************************************************************************************************************************************
         **	PUBLIC INIT
         **********************************************************************************************************************************************************
         *********************************************************************************************************************************************************/
 
         /***************************************************************************/
-        //!	@brief public method
+        //!	@brief public init
         //!	init | void
         /***************************************************************************/
         //! @return bool | false = OK | true = ERR
@@ -332,8 +366,10 @@ class Screen : Longan_nano::Display
             //	BODY
             //----------------------------------------------------------------
 
-            //
+            //Initialize the display driver. It handles phisical communication with the display and provide methods to write sprites
             f_ret = this -> Longan_nano::Display::init();
+            
+            this -> init_default_colors();
             //Initialize the frame buffer
             f_ret |= this -> init_frame_buffer();
             //Initialize default palette
@@ -348,13 +384,546 @@ class Screen : Longan_nano::Display
             //----------------------------------------------------------------
             DRETURN();
             return f_ret;	//OK
-        }	//End public method: init | void
+        }	//End public init: init | void
+
+        /***************************************************************************/
+        //!	@brief public init
+        //!	reset_colors | 
+        /***************************************************************************/
+        //! @return bool | false = OK | true = ERR
+        //! @details
+        //!	Reset the colors to default
+        /***************************************************************************/
+
+        bool reset_colors( void )
+        {
+            DENTER();
+            //----------------------------------------------------------------
+            //	VARS
+            //----------------------------------------------------------------
+
+            //Return flag
+            bool f_ret = false;
+
+            //----------------------------------------------------------------
+            //	BODY
+            //----------------------------------------------------------------
+            
+            this -> init_default_colors();
+            f_ret |= this -> init_palette();
+            this -> Display::clear();
+
+            //----------------------------------------------------------------
+            //	RETURN
+            //----------------------------------------------------------------
+            DRETURN();
+            return f_ret;	//OK
+        }	//End public init: reset_colors | void
+
+        /*********************************************************************************************************************************************************
+        **********************************************************************************************************************************************************
+        **	PUBLIC SETTER
+        **********************************************************************************************************************************************************
+        *********************************************************************************************************************************************************/
+
+        /***************************************************************************/
+        //!	@brief public method
+        //!	set_color | int | int | Color | Color
+        /***************************************************************************/
+        //! @return bool | false = OK | true = ERR
+        //! @details
+        //! Print a character on screen using default background color but a user defined foreground color
+        /***************************************************************************/
+
+        inline bool set_color( int origin_h, int origin_w, Color background, Color foreground )
+        {
+            DENTER();
+            //----------------------------------------------------------------
+            //	CHECK
+            //----------------------------------------------------------------
+
+            //If: first character is outside the ascii sprite table
+            if ((origin_h < 0) || (origin_h >= Config::FRAME_BUFFER_HEIGHT) || (origin_w < 0) || (origin_w >= Config::FRAME_BUFFER_WIDTH))
+            {
+                DRETURN_ARG("ERR: out of the sprite table %5d %5d\n", origin_h, origin_w);
+                return true;	//FAIL
+            }
+            //If: colors are bad
+            if ((background >= (Color)Config::PALETTE_SIZE) || (foreground >= (Color)Config::PALETTE_SIZE))
+            {
+                DRETURN_ARG("ERR: bad default colors | Back: %3d | Fore: %3d |\n", background, foreground );
+                return true;    //FAIL
+            }            
+
+            //----------------------------------------------------------------
+            //	BODY
+            //----------------------------------------------------------------
+
+            //Has the sprite changed?
+            bool f_changed = false;
+            //Fetch sprite
+            Frame_buffer_sprite sprite_tmp = g_frame_buffer[origin_h][origin_w];
+            //If: sprite uses color and color has changed
+            if ((this -> is_using_background(sprite_tmp.sprite_index) == true) && (sprite_tmp.background_color != background))
+            {
+                //Update colors
+                sprite_tmp.background_color = background;
+                f_changed = true;
+            }
+            //If: sprite uses color and color has changed
+            if ((this -> is_using_foreground(sprite_tmp.sprite_index) == true) && (sprite_tmp.foreground_color != foreground))
+            {
+                //Update colors
+                sprite_tmp.foreground_color = foreground;
+                f_changed = true;
+            }
+            //If the sprite has changed
+            if (f_changed == true)
+            {
+                //Update sprite
+                sprite_tmp.f_update = true;
+                //Write back
+                g_frame_buffer[origin_h][origin_w] = sprite_tmp;
+                //Increase driver workload
+                this -> g_pending_cnt++;
+            }
+
+            //----------------------------------------------------------------
+            //	RETURN
+            //----------------------------------------------------------------
+            DRETURN();
+            return false;   //OK
+        }	//End public method: set_color | int | int | Color | Color
+
+        /***************************************************************************/
+        //!	@brief public method
+        //!	set_default_colors | Color | Color
+        /***************************************************************************/
+        //! @return int16_t | >=0 Number of sprites changed | < 0 error |
+        //! @details
+        //! Change the default background and foreground colors
+        //! All existing sprites are automatically updated as needed
+        /***************************************************************************/
+
+        int16_t set_default_colors( Color new_background, Color new_foreground )
+        {
+            DENTER();
+            //----------------------------------------------------------------
+            //	CHECK
+            //----------------------------------------------------------------
+
+            //If: colors are bad
+            if ((new_background >= (Color)Config::PALETTE_SIZE) || (new_foreground >= (Color)Config::PALETTE_SIZE))
+            {
+                DRETURN_ARG("ERR: bad default colors | Back: %3d | Fore: %3d |\n", new_background, new_foreground );
+                return true;    //FAIL
+            }            
+
+            //----------------------------------------------------------------
+            //	VARS
+            //----------------------------------------------------------------
+
+            //Temp sprite
+            Frame_buffer_sprite sprite_tmp;
+            //Num of updated sprites
+            int16_t ret = 0;
+
+            Color old_background = this -> g_default_background_color;
+            Color old_foreground = this -> g_default_foreground_color;
+
+            bool f_background_change = (this -> g_default_background_color != new_background);
+            bool f_foreground_change = (this -> g_default_foreground_color != new_foreground);
+
+            //----------------------------------------------------------------
+            //	BODY
+            //----------------------------------------------------------------
+
+            //If: nothing to do
+            if ( (f_background_change == false) && (f_foreground_change == false))
+            {
+                //Do nothing
+            }
+            //If: only background change
+            if ( (f_background_change == true) && (f_foreground_change == false))
+            {
+                //Update defaults
+                this -> g_default_background_color = new_background;
+                //For: scan height
+                for (uint8_t th = 0;th < Config::FRAME_BUFFER_HEIGHT;th++)
+                {
+                    //For: scan width
+                    for (uint8_t tw = 0;tw < Config::FRAME_BUFFER_WIDTH;tw++)
+                    {
+                        //Fetch sprite
+                        sprite_tmp = this -> g_frame_buffer[ th ][ tw ];
+                        //If: the background is a color to be swapped and the character uses the background
+                        if ( (sprite_tmp.background_color == old_background) && (this -> is_using_background( sprite_tmp.sprite_index )) )
+                        {
+                            //Change the color
+                            sprite_tmp.background_color = new_background;
+                            //If: sprite is not marked for update
+                            if (sprite_tmp.f_update == false)
+                            {
+                                //Mark sprite for update
+                                sprite_tmp.f_update = true;
+                                //Increase the workload counter
+                                this -> g_pending_cnt++;
+                            }
+                            //Keep track of the number of sprites changed by this method
+                            ret++;
+                            //Write back updated sprite
+                            this -> g_frame_buffer[ th ][ tw ] = sprite_tmp;
+                        }
+                    } //End For: scan width
+                } //For: scan height
+            } //End If: only background change
+            //If: only foreground change
+            else if ( (f_background_change == false) && (f_foreground_change == true))
+            {
+                //Update defaults
+                this -> g_default_foreground_color = new_foreground;
+                //For: scan height
+                for (uint8_t th = 0;th < Config::FRAME_BUFFER_HEIGHT;th++)
+                {
+                    //For: scan width
+                    for (uint8_t tw = 0;tw < Config::FRAME_BUFFER_WIDTH;tw++)
+                    {
+                        //Fetch sprite
+                        sprite_tmp = this -> g_frame_buffer[ th ][ tw ];
+                        //If: the background is a color to be swapped and the character uses the background
+                        if ( (sprite_tmp.foreground_color == old_foreground) && (this -> is_using_foreground( sprite_tmp.sprite_index )) )
+                        {
+                            //Change the color
+                            sprite_tmp.foreground_color = new_foreground;
+                            //If: sprite is not marked for update
+                            if (sprite_tmp.f_update == false)
+                            {
+                                //Mark sprite for update
+                                sprite_tmp.f_update = true;
+                                //Increase the workload counter
+                                this -> g_pending_cnt++;
+                            }
+                            //Keep track of the number of sprites changed by this method
+                            ret++;
+                            //Write back updated sprite
+                            this -> g_frame_buffer[ th ][ tw ] = sprite_tmp;
+                        }
+                    } //End For: scan width
+                } //For: scan height
+            } //End If: only foreground change
+            //If: both colors have changed
+            else //if ( (f_background_change == true) && (f_foreground_change == true))
+            {
+                //Has sprite changed
+                bool f_changed = false;
+                //Update defaults
+                this -> g_default_background_color = new_background;
+                this -> g_default_foreground_color = new_foreground;
+                //For: scan height
+                for (uint8_t th = 0;th < Config::FRAME_BUFFER_HEIGHT;th++)
+                {
+                    //For: scan width
+                    for (uint8_t tw = 0;tw < Config::FRAME_BUFFER_WIDTH;tw++)
+                    {
+                        //Fetch sprite
+                        sprite_tmp = this -> g_frame_buffer[ th ][ tw ];
+                        //If: the background is a color to be swapped and the character uses the background
+                        if ( (sprite_tmp.background_color == old_background) && (this -> is_using_background( sprite_tmp.sprite_index )) )
+                        {
+                            //Change the color
+                            f_changed = true;
+                            sprite_tmp.background_color = new_background;
+                        }
+                        //If: the background is a color to be swapped and the character uses the background
+                        if ( (sprite_tmp.foreground_color == old_foreground) && (this -> is_using_foreground( sprite_tmp.sprite_index )) )
+                        {
+                            //Change the color
+                            f_changed = true;
+                            sprite_tmp.foreground_color = new_foreground;
+                        }
+                        //If: Sprite has changed
+                        if (f_changed == true)
+                        {
+                            //If: sprite is not marked for update
+                            if (sprite_tmp.f_update == false)
+                            {
+                                //Mark sprite for update
+                                sprite_tmp.f_update = true;
+                                //Increase the workload counter
+                                this -> g_pending_cnt++;
+                            }
+                            //Keep track of the number of sprites changed by this method
+                            ret++;
+                            //Write back updated sprite
+                            this -> g_frame_buffer[ th ][ tw ] = sprite_tmp;
+                        }
+                    } //End For: scan width
+                } //For: scan height
+            } //End If: both colors have changed
+
+            //----------------------------------------------------------------
+            //	RETURN
+            //----------------------------------------------------------------
+            DRETURN();
+            return ret;   //OK
+        }	//End public method: set_color | int | int | Color | Color
+
+        /***************************************************************************/
+        //!	@brief public setter
+        //!	set_palette_color | Color | uint8_t |  uint8_t |  uint8_t |
+        /***************************************************************************/
+        //! @param r | uint8_t | red color channel
+        //! @param g | uint8_t | red color channel
+        //! @param b | uint8_t | red color channel
+        //! @param source | Color | color to be changed
+        //! @return int16_t | >=0 Number of sprites changed | < 0 error |
+        //! @return void
+        //! @details
+        //! Change a color in the palette to another RGB color
+        //! Use the conversion function provided by the Display driver to compute the right color space
+        /***************************************************************************/
+
+        int16_t set_palette_color( Color palette_index, uint8_t r, uint8_t g, uint8_t b )
+        {
+            DENTER_ARG("source: %d |\n", palette_index);
+            //----------------------------------------------------------------
+            //	CHECK
+            //----------------------------------------------------------------
+            //If: bad colors
+            if ((Config::PEDANTIC_CHECKS == true) && (palette_index >= (Color)Config::PALETTE_SIZE))
+            {
+                DRETURN_ARG("ERR: bad palette index | source: %d |\n", palette_index );
+                return -1;
+            }
+
+            //----------------------------------------------------------------
+            //	CHANGE PALETTE
+            //----------------------------------------------------------------
+
+            uint16_t new_color = Display::color( r, g, b );
+            //If: desired color is already in the palette
+            if (this -> g_palette[ palette_index ] == new_color)
+            {
+                DRETURN();    
+                return 0;
+            }
+            //Set the color in the palette
+            this -> g_palette[ palette_index ] = new_color;
+
+            //----------------------------------------------------------------
+            //	MARK CHANGED SPRITES FOR UPDATE
+            //----------------------------------------------------------------
+
+            //Temp sprite
+            Frame_buffer_sprite sprite_tmp;
+            //Num of updated sprites
+            int16_t ret = 0;
+            bool f_sprite_changed;
+            //For: scan height
+            for (uint8_t th = 0;th < Config::FRAME_BUFFER_HEIGHT;th++)
+            {
+                //For: scan width
+                for (uint8_t tw = 0;tw < Config::FRAME_BUFFER_WIDTH;tw++)
+                {
+                    //Fetch sprite
+                    sprite_tmp = this -> g_frame_buffer[ th ][ tw ];
+                    //Was sprite changed?
+                    f_sprite_changed = false;
+                    //If: the background is a color to be swapped and the character uses the background
+                    if ( (sprite_tmp.background_color == palette_index) && (this -> is_using_background( sprite_tmp.sprite_index )) )
+                    {
+                        f_sprite_changed = true;
+                    }
+                    //If: the foreground is a color to be swapped and the character uses the foreground
+                    if ( (sprite_tmp.foreground_color == palette_index) && (this -> is_using_foreground( sprite_tmp.sprite_index )) )
+                    {
+                        f_sprite_changed = true;                        
+                    }
+                    //If: sprite was changed
+                    if (f_sprite_changed == true)
+                    {
+                        //If: sprite is not marked for update
+                        if (sprite_tmp.f_update == false)
+                        {
+                            //Mark sprite for update
+                            sprite_tmp.f_update = true;
+                            //Increase the workload counter
+                            this -> g_pending_cnt++;
+                        }
+                        //Keep track of the number of sprites changed by this method
+                        ret++;
+                        //Write back updated sprite
+                        this -> g_frame_buffer[ th ][ tw ] = sprite_tmp;
+                    }
+                } //End For: scan width
+            } //For: scan height
+
+            //----------------------------------------------------------------
+            //	RETURN
+            //----------------------------------------------------------------
+            DRETURN();
+            return ret;
+        }	//End public setter: set_palette_color | Color | uint8_t |  uint8_t |  uint8_t |
+
+        /***************************************************************************/
+        //!	@brief public setter
+        //!	set_format | Format_align | Format_format |
+        /***************************************************************************/
+        //! @param align | Format_align | set alignment of the number
+        //! @param format | Format_format | set display format of the number
+        //! @return void
+        //! @details
+        //!	With left adjust, the number is print starting from left an origin is the position of the most significant number
+        //! With right adjust, the origin is the position of the least significant number        
+        //! LEFT        78901       12.71m
+        //! RIGHT   78901      12.71m 
+        //! ORIGIN      ^           ^
+        //! The format also specifies full number or enginnering format
+        /***************************************************************************/
+
+        void set_format( int number_size, Format_align align, Format_format format )
+        {
+            DENTER_ARG("align: %d | format: %d\n", (int)align, (int)format );
+
+            //----------------------------------------------------------------
+            //	BODY
+            //----------------------------------------------------------------
+
+            //Configure number format for the next print
+            this -> g_format_number.size = number_size;
+            this -> g_format_number.align = align;
+            this -> g_format_number.format = format;
+
+            //----------------------------------------------------------------
+            //	RETURN
+            //----------------------------------------------------------------
+            DRETURN();
+            return;
+        }	//End public setter: set_format | Format_align | Format_format |
+
+        /***************************************************************************/
+        //!	@brief public setter
+        //!	set_eng_exp | int8_t |
+        /***************************************************************************/
+        //! @param align | Format_align | set alignment of the number
+        //! @param format | Format_format | set display format of the number
+        //! @return void
+        //! @details
+        //!	With left adjust, the number is print starting from left an origin is the position of the most significant number
+        //! With right adjust, the origin is the position of the least significant number        
+        //! LEFT        78901       12.71m
+        //! RIGHT   78901      12.71m 
+        //! ORIGIN      ^           ^
+        //! The format also specifies full number or enginnering format
+        /***************************************************************************/
+
+        void set_eng_exp( int8_t exp )
+        {
+            DENTER_ARG("exp: %d |\n", exp );
+
+            //----------------------------------------------------------------
+            //	BODY
+            //----------------------------------------------------------------
+
+            //Configure number format for the next print
+            this -> g_format_number.eng_exp = exp;
+
+            //----------------------------------------------------------------
+            //	RETURN
+            //----------------------------------------------------------------
+            DRETURN();
+            return;
+        }	//End public setter: set_eng_exp | int8_t |
 
         /*********************************************************************************************************************************************************
         **********************************************************************************************************************************************************
         **	PUBLIC METHODS
         **********************************************************************************************************************************************************
         *********************************************************************************************************************************************************/
+
+        /***************************************************************************/
+        //!	@brief public method
+        //!	change_color | Color | Color |
+        /***************************************************************************/
+        //! @param source | Color | color to be changed
+        //! @param dest | Color | color to be drawn
+        //! @return int16_t | >=0 Number of sprites changed | < 0 error |
+        //! @details
+        //!	Every sprite that use the "source" palette color as either background or foreground
+        //! has it swapped for the "dest" palette color. All changed sprites are marked for update
+        /***************************************************************************/
+
+        int16_t change_color( Color source, Color dest )
+        {
+            DENTER_ARG("source: %d | dest: %d |\n", source, dest);
+            //----------------------------------------------------------------
+            //	CHECK
+            //----------------------------------------------------------------
+            //If: bad colors
+            if ((Config::PEDANTIC_CHECKS == true) && ((source >= (Color)Config::PALETTE_SIZE) || (dest >= (Color)Config::PALETTE_SIZE)) )
+            {
+                DRETURN_ARG("ERR: bad colors | source: %d | dest: %d |\n", source, dest );
+                return -1;
+            }
+
+            //----------------------------------------------------------------
+            //	BODY
+            //----------------------------------------------------------------
+            
+            //Temp sprite
+            Frame_buffer_sprite sprite_tmp;
+            //Num of updated sprites
+            int16_t ret = 0;
+            bool f_sprite_changed;
+            //For: scan height
+            for (uint8_t th = 0;th < Config::FRAME_BUFFER_HEIGHT;th++)
+            {
+                //For: scan width
+                for (uint8_t tw = 0;tw < Config::FRAME_BUFFER_WIDTH;tw++)
+                {
+                    //Fetch sprite
+                    sprite_tmp = this -> g_frame_buffer[ th ][ tw ];
+                    //Was sprite changed?
+                    f_sprite_changed = false;
+                    //If: the background is a color to be swapped and the character uses the background
+                    if ( (sprite_tmp.background_color == source) && (this -> is_using_background( sprite_tmp.sprite_index )) )
+                    {
+                        //Swap the color
+                        sprite_tmp.background_color = dest;
+                        f_sprite_changed = true;
+                    }
+                    //If: the foreground is a color to be swapped and the character uses the foreground
+                    if ( (sprite_tmp.foreground_color == source) && (this -> is_using_foreground( sprite_tmp.sprite_index )) )
+                    {
+                        //Swap the color
+                        sprite_tmp.foreground_color = dest;
+                        f_sprite_changed = true;                        
+                    }
+                    //If: sprite was changed
+                    if (f_sprite_changed == true)
+                    {
+                        //If: sprite is not marked for update
+                        if (sprite_tmp.f_update == false)
+                        {
+                            //Mark sprite for update
+                            sprite_tmp.f_update = true;
+                            //Increase the workload counter
+                            this -> g_pending_cnt++;
+                        }
+                        //Keep track of the number of sprites changed by this method
+                        ret++;
+                        //Write back updated sprite
+                        this -> g_frame_buffer[ th ][ tw ] = sprite_tmp;
+                    }
+                } //End For: scan width
+            } //For: scan height
+
+            //----------------------------------------------------------------
+            //	RETURN
+            //----------------------------------------------------------------
+            DENTER_ARG("sprites updated %d |\n", ret);
+            return ret;	//fail
+        }	//End public method: change_color | Color | Color |
 
         /***************************************************************************/
         //!	@brief public method
@@ -467,7 +1036,7 @@ class Screen : Longan_nano::Display
                         {
                             //Get back left
                             status.scan_w = 0;
-                            //Move down in height (2� rank of frame buffer vector)
+                            //Move down in height (2nd rank of frame buffer vector)
                             status.scan_h++;
                         }
 
@@ -593,7 +1162,6 @@ class Screen : Longan_nano::Display
                 } //End For: each frame buffer col (width scan)
             } //End For: each frame buffer row (height scan)
 
-
             //----------------------------------------------------------------
             //	RETURN
             //----------------------------------------------------------------
@@ -605,13 +1173,13 @@ class Screen : Longan_nano::Display
         //!	@brief public method
         //!	print | int | int | char | Color | Color
         /***************************************************************************/
-        //! @return bool | false = OK | true = ERR
+        //! @return int16_t | >=0 Number of sprites changed | < 0 error |
         //! @details
         //! Print a character on screen using user defined background and foreground colors
         //! Mark the sprite for update if needs to be
         /***************************************************************************/
 
-        bool print( int origin_h, int origin_w, char c, Color background, Color foreground )
+        int16_t print( int origin_h, int origin_w, char c, Color background, Color foreground )
         {
             DENTER_ARG("h: %5d, w: %5d, c: %c %d\n", origin_h, origin_w, c, c);
             //----------------------------------------------------------------
@@ -622,19 +1190,19 @@ class Screen : Longan_nano::Display
             if ((origin_h < 0) || (origin_h >= Config::FRAME_BUFFER_HEIGHT) || (origin_w < 0) || (origin_w >= Config::FRAME_BUFFER_WIDTH))
             {
                 DRETURN_ARG("ERR: out of the sprite table\n");
-                return true;    //FAIL
+                return -1;    //FAIL
             }
             //If: colors are bad
             if ((background >= (Color)Config::PALETTE_SIZE) || (foreground >= (Color)Config::PALETTE_SIZE))
             {
                 DRETURN_ARG("ERR: bad default colors | Back: %3d | Fore: %3d |\n", background, foreground );
-                return true;    //FAIL
+                return -1;    //FAIL
             }
             //If: character is not stored inside the ascii sprite table
             if (is_valid_char( c ) == false)
             {
                 DRETURN_ARG("ERR: character not on the char table\n");
-                return true;    //FAIL
+                return -1;    //FAIL
             }
 
             //----------------------------------------------------------------
@@ -660,7 +1228,7 @@ class Screen : Longan_nano::Display
             if (this -> is_same_sprite( this -> g_frame_buffer[origin_h][origin_w], sprite_tmp) == true )
             {
                 DRETURN_ARG("INFO: nothing to do\n");
-                return false; //Nothing to do
+                return 0; //Nothing to do
             }
             //Update the sprite frame buffer
             this -> g_frame_buffer[origin_h][origin_w] = sprite_tmp;
@@ -671,19 +1239,19 @@ class Screen : Longan_nano::Display
             //	RETURN
             //----------------------------------------------------------------
             DRETURN();
-            return false;	//OK
+            return 1;
         }	//End public method: print | int | int | char | Color | Color
 
         /***************************************************************************/
         //!	@brief public method
         //!	print | int | int | char | Color
         /***************************************************************************/
-        //! @return bool | false = OK | true = ERR
+        //! @return int16_t | >=0 Number of sprites changed | < 0 error |
         //! @details
         //! Print a character on screen using default background color but a user defined foreground color
         /***************************************************************************/
 
-        inline bool print( int origin_h, int origin_w, char c, Color foreground )
+        inline int16_t print( int origin_h, int origin_w, char c, Color foreground )
         {
             DENTER();
             //----------------------------------------------------------------
@@ -691,7 +1259,7 @@ class Screen : Longan_nano::Display
             //----------------------------------------------------------------
 
             //Call the more generic print char method and return its result
-            bool f_ret = this -> print( origin_h, origin_w, c, this -> g_default_background_color, foreground );
+            int16_t f_ret = this -> print( origin_h, origin_w, c, this -> g_default_background_color, foreground );
 
             //----------------------------------------------------------------
             //	RETURN
@@ -704,7 +1272,7 @@ class Screen : Longan_nano::Display
         //!	@brief public method
         //!	print | int | int | char |
         /***************************************************************************/
-        //! @return bool | false = OK | true = ERR
+        //! @return int16_t | >=0 Number of sprites changed | < 0 error |
         //! @details
         //!	print a char inside the sprite frame buffer and mark it for update if needs to be
         //! uses default background and foreground colors
@@ -718,7 +1286,7 @@ class Screen : Longan_nano::Display
             //----------------------------------------------------------------
 
             //Call the more generic print char method and return its result
-            bool f_ret = this -> print( origin_h, origin_w, c, this -> g_default_background_color, this -> g_default_foreground_color );
+            int16_t f_ret = this -> print( origin_h, origin_w, c, this -> g_default_background_color, this -> g_default_foreground_color );
 
             //----------------------------------------------------------------
             //	RETURN
@@ -731,14 +1299,14 @@ class Screen : Longan_nano::Display
         //!	@brief public method
         //!	print | int | int | char | Color | Color
         /***************************************************************************/
-        //! @return bool | false = OK | true = ERR
+        //! @return int16_t | >=0 Number of sprites changed | < 0 error |
         //! @details
         //! Print a string on screen using user defined background and foreground colors
         //! Strings will not wrap around the screen
         //! String must be \0 terminated
         /***************************************************************************/
 
-        bool print( int origin_h, int origin_w, const char *str, Color background, Color foreground )
+        int16_t print( int origin_h, int origin_w, const char *str, Color background, Color foreground )
         {
             DENTER_ARG("h: %5d, w: %5d, c: %p %s\n", origin_h, origin_w, str, str);
             //----------------------------------------------------------------
@@ -749,27 +1317,19 @@ class Screen : Longan_nano::Display
             if ((origin_h < 0) || (origin_h >= Config::FRAME_BUFFER_HEIGHT) || (origin_w < 0) || (origin_w >= Config::FRAME_BUFFER_WIDTH))
             {
                 DRETURN_ARG("ERR: out of the sprite table %5d %5d\n", origin_h, origin_w);
-                return true;	//FAIL
+                return -1;	//FAIL
             }
             //If: colors are bad
             if ((background >= (Color)Config::PALETTE_SIZE) || (foreground >= (Color)Config::PALETTE_SIZE))
             {
                 DRETURN_ARG("ERR: bad default colors | Back: %3d | Fore: %3d |\n", background, foreground );
-                return true;    //FAIL
+                return -1;    //FAIL
             }
             //If: string is invalid
             if (str == nullptr)
             {
                 DRETURN_ARG("ERR: null pointer string\n");
-                return true;	//FAIL
-            }
-            //Compute size of the string
-            uint8_t str_len = strlen( str );
-            //If: zero size string
-            if (str_len <= 0)
-            {
-                DRETURN_ARG("zero size string\n");
-                return false; //OK Nothing to do
+                return -1;	//FAIL
             }
 
             //----------------------------------------------------------------
@@ -787,11 +1347,12 @@ class Screen : Longan_nano::Display
             //	BODY
             //----------------------------------------------------------------
 
+            int16_t num_changed_sprites = 0;
             //Fast counters
             uint8_t t = 0;
             uint8_t tw = origin_w;
             //While: I'm allowed to print, I didn't exceed the string size, and I didn't exceed the screen position
-            while ((t < str_len) && (tw < FRAME_BUFFER_WIDTH))
+            while ((str[t] != '\0') && (tw < Config::FRAME_BUFFER_WIDTH))
             {
                 //Compute sprite ascii char
                 sprite_tmp.sprite_index = str[t];
@@ -803,7 +1364,7 @@ class Screen : Longan_nano::Display
                     DPRINT_NOTAB("H: %5d | W: %5d | non printable\n", origin_h, tw );
                 }
                 //If: character is already inside the sprite frame buffer
-                else if (this -> is_same_sprite( this -> g_frame_buffer[origin_h][origin_w], sprite_tmp) == true )
+                else if (this -> is_same_sprite( this -> g_frame_buffer[origin_h][tw], sprite_tmp) == true )
                 {
                     //This character doesn't need updating
                     DPRINT_NOTAB("H: %5d | W: %5d | C: %c | skip\n", origin_h, tw, sprite_tmp.sprite_index );
@@ -814,6 +1375,7 @@ class Screen : Longan_nano::Display
                     DPRINT_NOTAB("H: %5d | W: %5d | C: %c | to be updated\n", origin_h, tw, str[t] );
                     //Update the sprite frame buffer
                     this -> g_frame_buffer[origin_h][tw] = sprite_tmp;
+                    num_changed_sprites++;
                     show_frame_sprite(this -> g_frame_buffer[origin_h][tw]);    //@debug
                 }
                 //Next character
@@ -825,21 +1387,21 @@ class Screen : Longan_nano::Display
             //	RETURN
             //----------------------------------------------------------------
             DRETURN();
-            return false;	//OK
+            return num_changed_sprites;	//OK
         }	//End public method: print | int | int | char | Color | Color
 
         /***************************************************************************/
         //!	@brief public method
         //!	print | int | int | const char* | Color |
         /***************************************************************************/
-        //! @return bool | false = OK | true = ERR
+        //! @return int16_t | >=0 Number of sprites changed | < 0 error |
         //! @details
         //!	print a char inside the sprite frame buffer and mark it for update if needs to be
         //! use default background
         //! wrapper for more general print string function
         /***************************************************************************/
 
-        inline bool print( int origin_h, int origin_w, const char *str, Color foreground )
+        inline int16_t print( int origin_h, int origin_w, const char *str, Color foreground )
         {
             DENTER();   //Trace enter
             //----------------------------------------------------------------
@@ -847,7 +1409,7 @@ class Screen : Longan_nano::Display
             //----------------------------------------------------------------
 
             //more general print string function
-            bool f_ret = print( origin_h, origin_w, str, this -> g_default_background_color,  foreground );
+            int16_t f_ret = print( origin_h, origin_w, str, this -> g_default_background_color,  foreground );
 
             //----------------------------------------------------------------
             //	RETURN
@@ -860,14 +1422,14 @@ class Screen : Longan_nano::Display
         //!	@brief public method
         //!	print | int | int | const char* |
         /***************************************************************************/
-        //! @return bool | false = OK | true = ERR
+        //! @return int16_t | >=0 Number of sprites changed | < 0 error |
         //! @details
         //!	print a char inside the sprite frame buffer and mark it for update if needs to be
         //! uses default background and foreground colors
         //! wrapper for more general print string function
         /***************************************************************************/
 
-        bool print( int origin_h, int origin_w, const char *str )
+        inline int16_t print( int origin_h, int origin_w, const char *str )
         {
             DENTER();   //Trace enter
             //----------------------------------------------------------------
@@ -875,7 +1437,7 @@ class Screen : Longan_nano::Display
             //----------------------------------------------------------------
 
             //more general print string function
-            bool f_ret = print( origin_h, origin_w, str, this -> g_default_background_color,  this -> g_default_foreground_color );
+            int16_t f_ret = print( origin_h, origin_w, str, this -> g_default_background_color,  this -> g_default_foreground_color );
 
             //----------------------------------------------------------------
             //	RETURN
@@ -886,14 +1448,307 @@ class Screen : Longan_nano::Display
 
         /***************************************************************************/
         //!	@brief public method
-        //!	paint |
+        //!	print | int | int | int | uint8_t | Color | Color |
         /***************************************************************************/
-        //! @return bool | false = OK | true = ERR
+        //!	@param origin_h | int | height position of the first character
+        //!	@param origin_w | int | width position of the first character
+        //!	@param number_size | uint8_t | number of characters reserved for the number. Prevent numbers too large to cover other sections of the screen
+        //!	@param num | int | number to be shown on screen
+        //! @return int16_t | >=0 Number of sprites changed | < 0 error |
         //! @details
-        //!	dummy method to copy data
+        //!	Print a number on screen. Format configuration is handled by format
+        //! With left asjust, the number is print starting from left an origin is the position of the most significant number
+        //! With right adjust, the origin is the position of the least significant number        
+        //! LEFT        78901       12.71m
+        //! RIGHT   78901      12.71m 
+        //! ORIGIN      ^           ^
+        //! The format also specifies full number or enginnering format
+        /***************************************************************************/
+        
+        int16_t print( int origin_h, int origin_w, int num, Color background, Color foreground )
+        {
+            DENTER_ARG("NUM\n");   //Trace enter
+
+            //----------------------------------------------------------------
+            //	CHECK
+            //----------------------------------------------------------------
+            // Quit if the number is fully outside the screen for sure
+            // Avoid wasting CPU time for the conversion
+
+            //If: colors are bad
+            if ((background >= (Color)Config::PALETTE_SIZE) || (foreground >= (Color)Config::PALETTE_SIZE))
+            {
+                DRETURN_ARG("ERR: bad default colors | Back: %3d | Fore: %3d |\n", background, foreground );
+                return -1;    //FAIL
+            }
+            //If: height fully outside screen
+            if ((origin_h < 0) || (origin_h >= Config::FRAME_BUFFER_HEIGHT))
+            {
+                DRETURN_ARG("ERR: Height out of range: %d\n", origin_h);
+                return -1;
+            }
+            //Fetch the format of the number locally
+            Format_number format_tmp = this -> g_format_number;
+            //Compute first sprite and last sprite that can be occupied by the number
+            uint8_t start_w = ((format_tmp.align == Format_align::ADJ_LEFT)?(origin_w):(origin_w -format_tmp.size +1));
+            uint8_t stop_w = ((format_tmp.align == Format_align::ADJ_LEFT)?(origin_w +format_tmp.size -1):(origin_w));
+            DPRINT("start_w: %3d | stop_w: %3d\n", start_w, stop_w );
+            //If: width fully outside screen in right adjust
+            if ( (stop_w < 0) || (start_w >= Config::FRAME_BUFFER_WIDTH) )
+            {
+                DRETURN_ARG("ERR: Width out of range\n");
+                return -1;
+            }
+            //Clip the start and stop position to be inside the screen
+            start_w = ((start_w < 0)?(0):(start_w));
+            stop_w = ((stop_w >= Config::FRAME_BUFFER_WIDTH)?(Config::FRAME_BUFFER_WIDTH -1):(stop_w));
+
+            //----------------------------------------------------------------
+            //	NUM -> STRING
+            //----------------------------------------------------------------
+            //	Execute the conversion
+            
+            int16_t num_changed_sprites = 0;
+            //Prepare a string to hold the number
+            char str[User::String::Config::STRING_SIZE_S32];
+            //Temp return
+            uint8_t num_digit;
+            //Fast counter
+            uint8_t t;
+            //if: number format is extended
+            if (format_tmp.format == Format_format::NUM)
+            {
+                //Try to convert the number into a string
+                num_digit = User::String::num_to_str( (int32_t)num, User::String::Config::STRING_SIZE_S32, str );
+                //If: fail
+                if (num_digit == 0)
+                {
+                    DRETURN_ARG("ERR: Failed to convert NUM number: %d", num);
+                    return -1;
+                }
+            }
+            //If: number format is enginnering
+            else //if (format_tmp.format = Format_format::ENG)
+            {
+                //Try to convert the number into a string
+                num_digit = User::String::num_to_eng( (int32_t)num, this -> g_format_number.eng_exp, User::String::Config::STRING_SIZE_S32, str );
+                //If: fail
+                if (num_digit == 0)
+                {
+                    DRETURN_ARG("ERR: Failed to convert ENG number: %d", num);
+                    return -1;
+                }
+            }
+            
+            //----------------------------------------------------------------
+            //	NUMBER PARTIALLY OUT OF SCREEN
+            //----------------------------------------------------------------
+            //	Having just a piece of a number on screen is dangerous
+            //	partially blanked digits need to invalidate the full number and show '#'
+            //	Condition for partially out
+            //			START			STOP
+            //	LEFT	OW<0			OW+NUM-1>=W
+            //	RIGHT	OW-NUM+1<0		OW>=W
+
+            Frame_buffer_sprite old_sprite;
+            //Temporary sprite
+            Frame_buffer_sprite sprite_tmp;
+            //Build temporary sprite
+            sprite_tmp.background_color = background;
+            sprite_tmp.foreground_color = foreground;
+            sprite_tmp.f_update = true;
+            //If: number is too big
+            if (num_digit > format_tmp.size)
+            {
+                //Print the invalid number character to show the user the number has no meaning
+                sprite_tmp.sprite_index = '#';
+                //For: each number character that can be displayed
+                for (t = start_w;t <= stop_w;t++)
+                {
+                    //Has the sprite changed?
+                    if (this -> is_same_sprite(this -> g_frame_buffer[origin_h][t], sprite_tmp) == false)
+                    {
+                        //Update the sprite
+                        this -> g_frame_buffer[origin_h][t] = sprite_tmp;
+                        num_changed_sprites++;
+                        //Increase driver workload
+                        this -> g_pending_cnt++;
+                    }
+                }
+                DRETURN_ARG("ERR: Width partially out of range | LEFT | start %d | stop %d |\n", start_w, stop_w );
+                return num_changed_sprites;
+            }
+            //If: number partially outside screen in left adjust
+            else if ( (format_tmp.align == Format_align::ADJ_LEFT) && ((origin_w < 0) || ((origin_w +num_digit -1) >= Config::FRAME_BUFFER_WIDTH)) )
+            {
+                //Print the invalid number character to show the user the number has no meaning
+                sprite_tmp.sprite_index = '#';
+                //For: each number character that can be displayed
+                for (t = start_w;t <= stop_w;t++)
+                {
+                    //Has the sprite changed?
+                    if (this -> is_same_sprite(this -> g_frame_buffer[origin_h][t], sprite_tmp) == false)
+                    {
+                        //Update the sprite
+                        this -> g_frame_buffer[origin_h][t] = sprite_tmp;
+                        num_changed_sprites++;
+                        //Increase driver workload
+                        this -> g_pending_cnt++;
+                    }
+                }
+                DRETURN_ARG("ERR: Width partially out of range | LEFT | start %d | stop %d |\n", start_w, stop_w );
+                return num_changed_sprites;
+            }
+            //If: number partially outside screen in right adjust
+            else if ( (format_tmp.align == Format_align::ADJ_RIGHT) && ((origin_w -num_digit +1 < 0) || (origin_w >= Config::FRAME_BUFFER_WIDTH)) )
+            {
+                //Print the invalid number character to show the user the number has no meaning
+                sprite_tmp.sprite_index = '#';
+                //For: each number character that can be displayed
+                for (t = start_w;t <= stop_w;t++)
+                {
+                    //Has the sprite changed?
+                    if (this -> is_same_sprite(this -> g_frame_buffer[origin_h][t], sprite_tmp) == false)
+                    {
+                        //Update the sprite
+                        this -> g_frame_buffer[origin_h][t] = sprite_tmp;
+                        num_changed_sprites++;
+                        //Increase driver workload
+                        this -> g_pending_cnt++;
+                    }
+                }
+                DRETURN_ARG("ERR: Width partially out of range | RIGHT | start %d | stop %d |\n", start_w, stop_w );
+                return num_changed_sprites;
+            }
+            
+            //----------------------------------------------------------------
+            //	NUMBER FULLY INSIDE SCREEN
+            //----------------------------------------------------------------
+            //	Number can be shown fully on screen, with at most spaces left out
+
+            //If: left alignment
+            if (format_tmp.align == Format_align::ADJ_LEFT)
+            {
+                    //Print the number
+                //For: every number digit
+                for (t = 0;t < num_digit; t++)
+                {
+                    //Digit -> Sprite
+                    sprite_tmp.sprite_index = str[t];
+                    //Has the sprite changed?
+                    if (this -> is_same_sprite(this -> g_frame_buffer[origin_h][start_w +t], sprite_tmp) == false)
+                    {
+                        //Update the sprite
+                        this -> g_frame_buffer[origin_h][start_w +t] = sprite_tmp;
+                        num_changed_sprites++;
+                        //Increase driver workload
+                        this -> g_pending_cnt++;
+                    }
+                }	//End For: every digit
+                    //Print spaces to clear the previously printed character
+                //space sprite
+                sprite_tmp.sprite_index = ' ';
+                //For: every number digit
+                for (;t <= stop_w; t++)
+                {
+                    //Has the sprite changed?
+                    if (this -> is_same_sprite(this -> g_frame_buffer[origin_h][start_w +t], sprite_tmp) == false)
+                    {
+                        //Update the sprite
+                        this -> g_frame_buffer[origin_h][start_w +t] = sprite_tmp;
+                        num_changed_sprites++;
+                        //Increase driver workload
+                        this -> g_pending_cnt++;
+                    }
+                }
+            }   //End If: left alignment
+            //If: right alignment
+            else //if (format_tmp.align == Format_align::ADJ_RIGHT)
+            {
+                    //Print the correct number of spaces
+                //space sprite
+                sprite_tmp.sprite_index = ' ';
+                //For: every number digit
+                for (t = start_w;t < stop_w -num_digit +1; t++)
+                {
+                    //Has the sprite changed?
+                    if (this -> is_same_sprite(this -> g_frame_buffer[origin_h][t], sprite_tmp) == false)
+                    {
+                        //Update the sprite
+                        this -> g_frame_buffer[origin_h][t] = sprite_tmp;
+                        num_changed_sprites++;
+                        //Increase driver workload
+                        this -> g_pending_cnt++;
+                    }
+                }
+                //Reset start position
+                start_w = t;
+                //For: every number digit
+                for (t = 0;t < num_digit; t++)
+                {
+                    //Digit -> Sprite
+                    sprite_tmp.sprite_index = str[t];
+                    //Has the sprite changed?
+                    if (this -> is_same_sprite(this -> g_frame_buffer[origin_h][start_w +t], sprite_tmp) == false)
+                    {
+                        //Update the sprite
+                        this -> g_frame_buffer[origin_h][start_w +t] = sprite_tmp;
+                        num_changed_sprites++;
+                        //Increase driver workload
+                        this -> g_pending_cnt++;
+                    }
+                }	//End For: every digit	
+            }   //End If: right alignment
+
+            //----------------------------------------------------------------
+            //	RETURN
+            //----------------------------------------------------------------
+            DRETURN();
+            return num_changed_sprites;	//OK
+        }	//End public method: print | int | int | int | uint8_t | Color | Color |
+
+        /***************************************************************************/
+        //!	@brief public method
+        //!	print | int | int | int |
+        /***************************************************************************/
+        //!	@param origin_h | int | height position of the first character
+        //!	@param origin_w | int | width position of the first character
+        //!	@param number_size | uint8_t | number of characters reserved for the number. Prevent numbers too large to cover other sections of the screen
+        //!	@param num | int | number to be shown on screen
+        //! @return int16_t | >=0 Number of sprites changed | < 0 error |
+        //! @details
+        //!	Print a number on screen. Format configuration is handled by format
+        //! With left asjust, the number is print starting from left an origin is the position of the most significant number
+        //! With right adjust, the origin is the position of the least significant number        
+        //! LEFT        78901       12.71m
+        //! RIGHT   78901      12.71m 
+        //! ORIGIN      ^           ^
+        //! The format also specifies full number or enginnering format
+        /***************************************************************************/
+        
+        inline int16_t print( int origin_h, int origin_w, int num )
+        {
+            DENTER_ARG("Num: %d\n", num );
+            //----------------------------------------------------------------
+            //	RETURN
+            //----------------------------------------------------------------
+            //
+            int16_t ret = print( origin_h, origin_w, num, this -> g_default_background_color,  this -> g_default_foreground_color );
+            DRETURN_ARG("Success: %d\n", f_ret );
+            return ret;
+        }   //End public method: print | int | int | int |
+
+        /***************************************************************************/
+        //!	@brief public method
+        //!	paint | int | int | Symbol | Color | Color |
+        /***************************************************************************/
+        //! @return int16_t | >=0 Number of sprites changed | < 0 error |
+        //! @details
+        //!	Draw a graphic sprite on the screen
+        //! There are ery few graphics sprite as they ar meant for progress bars and little more
         /***************************************************************************/
 
-        bool paint( int origin_h, int origin_w, Symbol symbol )
+        int16_t paint( int origin_h, int origin_w, Symbol symbol, Color background, Color foreground )
         {
             //----------------------------------------------------------------
             //	VARS
@@ -907,22 +1762,8 @@ class Screen : Longan_nano::Display
             //	RETURN
             //----------------------------------------------------------------
 
-            return false;	//OK
-        }	//End public method: dummy
-
-    //Visible to derived classes
-    protected:
-        /*********************************************************************************************************************************************************
-        **********************************************************************************************************************************************************
-        **	PROTECTED METHODS
-        **********************************************************************************************************************************************************
-        *********************************************************************************************************************************************************/
-
-        /*********************************************************************************************************************************************************
-        **********************************************************************************************************************************************************
-        **	PROTECTED VARS
-        **********************************************************************************************************************************************************
-        *********************************************************************************************************************************************************/
+            return -1;	//fail
+        }	//End public method: paint | int | int | Symbol | Color | Color |
     
     //Visible only inside the class
     private:
@@ -932,12 +1773,13 @@ class Screen : Longan_nano::Display
         **********************************************************************************************************************************************************
         *********************************************************************************************************************************************************/
 
+        //States of the Screen side FSM. Display driver also has its own FSM states   
         typedef enum _Fsm_state
         {
-            SCAN_SPRITE,	//Search for a sprite
-            SEND_SPRITE		//
+            SCAN_SPRITE,    //Search for a sprite
+            SEND_SPRITE,    //Ask the Display driver to send sprites to the physical display
         } Fsm_state;
-
+    
         /*********************************************************************************************************************************************************
         **********************************************************************************************************************************************************
         **	PRIVATE STRUCT
@@ -967,8 +1809,21 @@ class Screen : Longan_nano::Display
             //Status of the scan
             Fsm_state phase;
         } Fsm_status;
+        
+        //number format to be printed by the print number method
+        typedef struct _Format_number
+        {
+            //Number of characters allowed for the number. 0 means no limit
+            int size;
+            //Number alignment
+            Format_align align;
+            //Number format
+            Format_format format;
+            //Base Exponent for the engineering number notation
+            int8_t eng_exp;
+        }   Format_number;
 
-         /*********************************************************************************************************************************************************
+        /*********************************************************************************************************************************************************
         **********************************************************************************************************************************************************
         **	PRIVATE INIT
         **********************************************************************************************************************************************************
@@ -993,8 +1848,10 @@ class Screen : Longan_nano::Display
             //	BODY
             //----------------------------------------------------------------
 
-            this -> g_default_background_color = Color::BLACK;
-            this -> g_default_foreground_color = Color::WHITE;
+            //Initialize default number format
+            this -> set_format( Screen::Config::FRAME_BUFFER_WIDTH, Format_align::ADJ_LEFT, Format_format::NUM );
+            //Initialize the base exponent for the engineering number format
+            this -> set_eng_exp( 0 );
 
             //----------------------------------------------------------------
             //	RETURN
@@ -1053,6 +1910,32 @@ class Screen : Longan_nano::Display
             DRETURN();
             return false;	//OK
         }	//End private init: init_frame_buffer | void
+
+        /***************************************************************************/
+        //!	@brief private init
+        //!	init_default_colors | void |
+        /***************************************************************************/
+        //! @return void
+        //! @details
+        //!	Initialize the default colors
+        /***************************************************************************/
+
+        inline void init_default_colors( void )
+        {
+            //----------------------------------------------------------------
+            //	BODY
+            //----------------------------------------------------------------
+
+            //Initialize default colors
+            this -> g_default_background_color = Color::BLACK;
+            this -> g_default_foreground_color = Color::WHITE;
+
+            //----------------------------------------------------------------
+            //	RETURN
+            //----------------------------------------------------------------
+
+            return;
+        }	//End private init: init_default_colors | void |
 
         /***************************************************************************/
         //!	@brief private init
@@ -1133,7 +2016,7 @@ class Screen : Longan_nano::Display
             return false;	//OK
         }	//End private init: init_fsm | void |
 
-         /*********************************************************************************************************************************************************
+        /*********************************************************************************************************************************************************
         **********************************************************************************************************************************************************
         **	PRIVATE TESTERS
         **********************************************************************************************************************************************************
@@ -1156,6 +2039,94 @@ class Screen : Longan_nano::Display
 
             return ((c >= ' ') && (c <= '~'));
         }	//End private tester: is_valid_char | char |
+
+        /***************************************************************************/
+        //!	@brief private tester
+        //!	is_using_background | uint8_t  |
+        /***************************************************************************/
+        //! @return bool | false = sprite do not use background color | true = sprite use background color
+        //! @details
+        //!	return true if the sprite make use of the background palette color
+        /***************************************************************************/
+
+        inline bool is_using_background( uint8_t sprite )
+        {
+            //----------------------------------------------------------------
+            //	BODY
+            //----------------------------------------------------------------
+            //If: special sprite
+            if (sprite < Config::NUM_SPECIAL_SPRITES)
+            {
+                //If: special sprite that use the background
+                if (sprite == Config::SPRITE_BACKGROUND)
+                {
+                    //Use background
+                    return true;
+                }
+                else
+                {
+                    //Do not use the background
+                    return false;
+                }
+            }
+            //If: sprite is an ascii character
+            else if (this -> is_valid_char(sprite) == true)
+            {
+                //An ascii character use the background
+                return true;
+            }
+
+            //----------------------------------------------------------------
+            //	RETURN
+            //----------------------------------------------------------------
+            
+            //Non drawable sprite
+            return false;
+        }	//End private tester: is_using_background | uint8_t  |
+
+        /***************************************************************************/
+        //!	@brief private tester
+        //!	is_using_foreground | uint8_t  |
+        /***************************************************************************/
+        //! @return bool | false = sprite do not use foreground color | true = sprite use foreground color
+        //! @details
+        //!	return true if the sprite make use of the foreground palette color
+        /***************************************************************************/
+
+        inline bool is_using_foreground( uint8_t sprite )
+        {
+            //----------------------------------------------------------------
+            //	BODY
+            //----------------------------------------------------------------
+            //If: special sprite
+            if (sprite < Config::NUM_SPECIAL_SPRITES)
+            {
+                //If: special sprite that use the color
+                if (sprite == Config::SPRITE_FOREGROUND)
+                {
+                    //Using color
+                    return true;
+                }
+                else
+                {
+                    //Not Using color
+                    return false;
+                }
+            }
+            //If: sprite is an ascii character
+            else if (this -> is_valid_char(sprite) == true)
+            {
+                //An ascii character use the color
+                return true;
+            }
+
+            //----------------------------------------------------------------
+            //	RETURN
+            //----------------------------------------------------------------
+            
+            //Non drawable sprite
+            return false;
+        }	//End private tester: is_using_foreground | uint8_t  |
 
         /***************************************************************************/
         //!	@brief private tester
@@ -1280,7 +2251,7 @@ class Screen : Longan_nano::Display
             return false;	//Sprites are different
         }	//End private tester: is_same_sprite | Frame_buffer_sprite | Frame_buffer_sprite |
 
-         /*********************************************************************************************************************************************************
+        /*********************************************************************************************************************************************************
         **********************************************************************************************************************************************************
         **	PRIVATE METHODS
         **********************************************************************************************************************************************************
@@ -1373,10 +2344,21 @@ class Screen : Longan_nano::Display
             //If: Handled Ascii Character in the character table
             else if (this -> is_valid_char( sprite_index ))
             {
-                //Full pixel color map
-                f_solid_color = false;
-                //Point to the first byte of the ascii sprite
-                sprite_ptr = &g_ascii_sprites_1608[ (sprite_index -' ') *Config::SPRITE_HEIGHT ];
+                //If: background and foreground are different
+                if (background_color != foreground_color)
+                {
+                    //Full pixel color map
+                    f_solid_color = false;
+                    //Point to the first byte of the ascii sprite
+                    sprite_ptr = &g_ascii_sprites_1608[ (sprite_index -' ') *Config::SPRITE_HEIGHT ];
+                }
+                //If: background and foreground are the same
+                else //if (background_color == foreground_color)
+                {
+                    //Draw a solid color sprite. Don't bother with computing a redundant pixel color map
+                    f_solid_color = true;
+                    color = background_color;
+                }
             }
             //If: Unhandled sprite code
             else
@@ -1451,6 +2433,7 @@ class Screen : Longan_nano::Display
 
         bool dummy( void )
         {
+            DENTER();
             //----------------------------------------------------------------
             //	VARS
             //----------------------------------------------------------------
@@ -1462,7 +2445,7 @@ class Screen : Longan_nano::Display
             //----------------------------------------------------------------
             //	RETURN
             //----------------------------------------------------------------
-
+            DRETURN();
             return false;	//OK
         }	//End public method: dummy
 
@@ -1514,7 +2497,7 @@ class Screen : Longan_nano::Display
 
         #endif
 
-         /*********************************************************************************************************************************************************
+        /*********************************************************************************************************************************************************
         **********************************************************************************************************************************************************
         **	PRIVATE VARS
         **********************************************************************************************************************************************************
@@ -1527,10 +2510,16 @@ class Screen : Longan_nano::Display
         uint16_t g_palette[ Config::PALETTE_SIZE ];
         //Frame Buffer
         Frame_buffer_sprite g_frame_buffer[ Config::FRAME_BUFFER_HEIGHT ][ Config::FRAME_BUFFER_WIDTH ];
+        //Keep track of the pending workload of the screen class
+        uint16_t g_pending_cnt;
+        //Keep track of the work done by the screen class. Used for profiling by the user
+        uint16_t g_sprites_drawn;
         //Sprite buffer that stores raw pixel data for a single sprite
         uint16_t g_pixel_data[ Config::SPRITE_PIXEL_COUNT ];
         //Status of the update FSM
         Fsm_status g_status;
+        //Display format for print numeric values
+        Format_number g_format_number;
         //H16W8 ASCII Sprites. Stored in the flash memory. 95 sprites from space ' ' code 32 to tilda '~' code 126
         static constexpr uint8_t g_ascii_sprites_1608[ 1520 ] =
         {
