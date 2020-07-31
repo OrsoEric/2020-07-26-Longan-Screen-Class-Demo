@@ -17,10 +17,9 @@ Youtube Video
 7 - profiler with engineering number format, four significant digits and si suffix and time profiling and cpu usage of the demos  
 8 - profiler with colors  
 GIF of DEMO7 profiler  
-<img src="https://user-images.githubusercontent.com/30684972/89022806-e0acef00-d322-11ea-847f-03e5cac872fa.jpg" alt="Longan Nano profiling Demo">  
 <img src="https://user-images.githubusercontent.com/30684972/89022296-100f2c00-d322-11ea-85a3-86236ec6eb70.gif" alt="Longan Nano profiling Demo" height="200">  
 Youtube Video  
-[![VID](http://img.youtube.com/vi/axC4QhXqJkA/0.jpg)](http://www.youtube.com/watch?v=axC4QhXqJkA "Screen Driver Demo")  
+[![VID](https://user-images.githubusercontent.com/30684972/89022806-e0acef00-d322-11ea-847f-03e5cac872fa.jpg)](http://www.youtube.com/watch?v=axC4QhXqJkA "Screen Driver Demo")  
 
 # Conclusions  
 The interrupts, clock system and DMA are more or less figured out  
