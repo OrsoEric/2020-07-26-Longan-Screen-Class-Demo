@@ -1,3 +1,6 @@
+# DOXYGEN Documentation  
+https://orsoeric.github.io/2020-07-26-Longan-Screen-Class-Demo/html/index.html
+  
 # 2020-07-26-Longan-Screen-Class-Demo
 My objective for this project is to develop drivers for the Longan Nano evaluation board  
 I need a lightweight LCD screen driver that uses little CPU and print characters on the screen asynchronously  
