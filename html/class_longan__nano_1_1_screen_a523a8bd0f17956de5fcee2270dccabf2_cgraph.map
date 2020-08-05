@@ -1,0 +1,5 @@
+<map id="Longan_nano::Screen::print" name="Longan_nano::Screen::print">
+<area shape="rect" id="node1" title="public method print | int | int | int | Color | Color |" alt="" coords="5,23,153,65"/>
+<area shape="rect" id="node2" href="$class_user_1_1_string.html#ae46d9fc4624388d689eb9002bb0c8057" title="public static method num_to_str | uint8_t | uint8_t | char * |" alt="" coords="205,5,369,32"/>
+<area shape="rect" id="node3" href="$class_user_1_1_string.html#a66a03ae372cea32a2fc9e3d648410f86" title="public static method num_to_eng | uint32_t | uint8_t | char * |" alt="" coords="201,56,372,83"/>
+</map>

@@ -1,0 +1,11 @@
+var searchData=
+[
+  ['change_5fcolor',['change_color',['../class_longan__nano_1_1_screen.html#abd1e539d0d73e54c081fac097a0fa826',1,'Longan_nano::Screen']]],
+  ['chrono',['Chrono',['../class_longan__nano_1_1_chrono.html',1,'Longan_nano::Chrono'],['../class_longan__nano_1_1_chrono.html#a65e18cb704bb9c45ffb3903be2124203',1,'Longan_nano::Chrono::Chrono()']]],
+  ['clear',['clear',['../class_longan__nano_1_1_leds.html#ac4480fc7eb1a90d175cd3454ee7e1af1',1,'Longan_nano::Leds::clear()'],['../class_longan__nano_1_1_screen.html#a59ba9c2b7128f36fb6eeea5107d22380',1,'Longan_nano::Screen::clear(void)'],['../class_longan__nano_1_1_screen.html#aeb944aafe6c187f607ca357a26842900',1,'Longan_nano::Screen::clear(Color color_tmp)'],['../class_longan__nano_1_1_display.html#a1d5115838177c5f3d011bc965d74a91b',1,'Longan_nano::Display::clear(void)'],['../class_longan__nano_1_1_display.html#a2014d7a172a5ed0032032c3ea52de5bd',1,'Longan_nano::Display::clear(uint16_t color)']]],
+  ['col_5faddress_5foffset',['COL_ADDRESS_OFFSET',['../class_longan__nano_1_1_display.html#a67d8795c9ce5df3460d0e4bf8919eb15abe1fa86118f55b723ab6578ea6551442',1,'Longan_nano::Display']]],
+  ['color',['Color',['../class_longan__nano_1_1_leds.html#a52173aea82f65e28d3552467ccd0d546',1,'Longan_nano::Leds::Color()'],['../class_longan__nano_1_1_screen.html#afefeeef557464200fdf1a71d07b0fa89',1,'Longan_nano::Screen::Color()'],['../class_longan__nano_1_1_display.html#a4043c4f00415badd75bac95b14a16feb',1,'Longan_nano::Display::color()']]],
+  ['color_5fdepth',['COLOR_DEPTH',['../class_longan__nano_1_1_display.html#a67d8795c9ce5df3460d0e4bf8919eb15ac806744ab66b1a54cffd0d5b7729cd7e',1,'Longan_nano::Display']]],
+  ['config',['Config',['../class_user_1_1_string.html#a1eb8fc6713465aea7d010228bc41509c',1,'User::String::Config()'],['../class_longan__nano_1_1_chrono.html#af1de135a485a9a12942d2583b6acb752',1,'Longan_nano::Chrono::Config()'],['../class_longan__nano_1_1_screen.html#ae90a27c8ef7c5971e15d654046a56d32',1,'Longan_nano::Screen::Config()'],['../class_longan__nano_1_1_display.html#a90dcf41a6db52dfd1c2d16832d743d2c',1,'Longan_nano::Display::Config()'],['../main_8cpp.html#a84d4bdac822279bdb19f9b5fe293b294',1,'Config():&#160;main.cpp']]],
+  ['cyan',['CYAN',['../class_longan__nano_1_1_screen.html#a1ab670c9ca2a7e81f681470f833f1beeaf6b7b74d1a807e2528c9bf0338043849',1,'Longan_nano::Screen']]]
+];
