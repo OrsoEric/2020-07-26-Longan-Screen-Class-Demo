@@ -1,11 +1,14 @@
 # DOXYGEN Documentation  
 https://orsoeric.github.io/2020-07-26-Longan-Screen-Class-Demo/main_8cpp.html
   
-# 2020-07-26-Longan-Screen-Class-Demo
+# Longan-Screen-Class-Demo
 My objective for this project is to develop drivers for the Longan Nano evaluation board  
 I need a lightweight LCD screen driver that uses little CPU and print characters on the screen asynchronously  
 I need a time class to profile execution times and schedule tasks for the hardwired scheduler  
-I added a LED class to practice with C++ scoping and use of combined header and implementation since I use lots of inline, and inline functions and template functions need to be declared alongside the header anyway
+I added a LED class to practice with C++ scoping and use of combined header and implementation since I use lots of inline, and inline functions and template functions need to be declared alongside the header anyway  
+With the latest update I added support for 10x8 "Courier Now" ascii sprites and 16x8 "NSimSun" ascii sprites as well with bug fixes and optimization  
+With 10x8 sprites there are 8x20 sprites on screen. With 16x8 sprites there are 5x20 sprites on screen  
+The Screen driver uses between 1.1% to 2.4% of the CPU when scheduled every 100us depending on workload  
   
 # 2020-07-26 Demos
 1 - clear screen to random color every 500ms  
@@ -23,10 +26,14 @@ GIF of DEMO7 profiler
 <img src="https://user-images.githubusercontent.com/30684972/89022296-100f2c00-d322-11ea-85a3-86236ec6eb70.gif" alt="Longan Nano profiling Demo" height="200">  
 Youtube Video  
 [![VID](https://user-images.githubusercontent.com/30684972/89022806-e0acef00-d322-11ea-847f-03e5cac872fa.jpg)](http://www.youtube.com/watch?v=axC4QhXqJkA "Screen Driver Demo")  
+# 2020-08-08 Demos
+8 - Profiler with sprites pending counter  
+9 - Profiler with colors  
+10 - Constant workload demo with CPU profiler
 
 # Conclusions  
 The interrupts, clock system and DMA are more or less figured out  
-The Screen driver uses 1.9% of the CPU when scheduled every 100us and while printing fast updating numbers with changing colors  
+  
 The driver for the LCD is divided in a Display class that handles the HAL, and a Screen class that handles the sprite based abstraction layer. This allows to massively reduce the bandwidth by not updating sprites already on screen and allow to hopefully change screen in the future without much trouble thanks to the ABI interface  
 The Chrono class allows to measure time using the integrated 64bit 27MHz SysTick timer, and allow to build an hardwired scheduler for my tasks  
 For the next step I'm going to build a template application I can start with for a fresh project  
