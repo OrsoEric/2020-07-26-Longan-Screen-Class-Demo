@@ -10,26 +10,20 @@ With the latest update I added support for 10x8 "Courier Now" ascii sprites and 
 With 10x8 sprites there are 8x20 sprites on screen. With 16x8 sprites there are 5x20 sprites on screen  
 The Screen driver uses between 1.1% to 2.4% of the CPU when scheduled every 100us depending on workload  
   
-# 2020-07-26 Demos
+# Demos  
 1 - clear screen to random color every 500ms  
 2 - print a character every 1ms  
 3 - print a colored character every 1ms  
 4 - print a string every 25ms  
 5 - print a colored string every 25ms  
-Youtube Video
-[![VID](http://img.youtube.com/vi/NfgCHvb00Ao/0.jpg)](http://www.youtube.com/watch?v=NfgCHvb00Ao "Screen Driver Demo")
-# 2020-07-31 Demos
 6 - print number on screen with reserved space and left/right adjust  
 7 - profiler with engineering number format, four significant digits and si suffix and time profiling and cpu usage of the demos  
-8 - profiler with colors  
-GIF of DEMO7 profiler  
-<img src="https://user-images.githubusercontent.com/30684972/89022296-100f2c00-d322-11ea-85a3-86236ec6eb70.gif" alt="Longan Nano profiling Demo" height="200">  
-Youtube Video  
-[![VID](https://user-images.githubusercontent.com/30684972/89022806-e0acef00-d322-11ea-847f-03e5cac872fa.jpg)](http://www.youtube.com/watch?v=axC4QhXqJkA "Screen Driver Demo")  
-# 2020-08-08 Demos
 8 - Profiler with sprites pending counter  
 9 - Profiler with colors  
 10 - Constant workload demo with CPU profiler
+
+Youtube Video
+[![VID](https://user-images.githubusercontent.com/30684972/89708265-b0460000-d975-11ea-9ef1-4c6acc2f1b2b.png)](http://www.youtube.com/watch?v=kqYAz0VRJZ8 "Screen Driver Demo")  
 
 # Conclusions  
 The interrupts, clock system and DMA are more or less figured out  
