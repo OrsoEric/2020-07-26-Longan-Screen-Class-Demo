@@ -1,5 +1,5 @@
 # DOXYGEN Documentation  
-https://orsoeric.github.io/2020-07-26-Longan-Screen-Class-Demo/index.html
+https://orsoeric.github.io/2020-07-26-Longan-Screen-Class-Demo/main_8cpp.html
   
 # 2020-07-26-Longan-Screen-Class-Demo
 My objective for this project is to develop drivers for the Longan Nano evaluation board  
