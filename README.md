@@ -22,6 +22,8 @@ The Screen driver uses between 1.1% to 2.4% of the CPU when scheduled every 100u
 9 - Profiler with colors  
 10 - Constant workload demo with CPU profiler
 
+!(https://user-images.githubusercontent.com/30684972/89022296-100f2c00-d322-11ea-85a3-86236ec6eb70.gif)
+
 Youtube Video
 [![VID](https://user-images.githubusercontent.com/30684972/89708265-b0460000-d975-11ea-9ef1-4c6acc2f1b2b.png)](http://www.youtube.com/watch?v=kqYAz0VRJZ8 "Screen Driver Demo Youtube Video")  
 
