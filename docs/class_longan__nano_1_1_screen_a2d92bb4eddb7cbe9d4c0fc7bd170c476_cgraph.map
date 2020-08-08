@@ -1,0 +1,8 @@
+<map id="Longan_nano::Screen::register_sprite" name="Longan_nano::Screen::register_sprite">
+<area shape="rect" id="node1" title="private method register_sprite | uint16_t | uint16_t |" alt="" coords="5,136,153,177"/>
+<area shape="rect" id="node2" href="$class_longan__nano_1_1_display.html#a4043c4f00415badd75bac95b14a16feb" title="Public Method color | uint8_t | uint8_t | uint8_t |." alt="" coords="201,5,352,47"/>
+<area shape="rect" id="node3" href="$class_longan__nano_1_1_screen.html#a6b29a604a59cb5856a6b7897f6513430" title="public getter get_pending | void |" alt="" coords="203,71,351,112"/>
+<area shape="rect" id="node4" href="$class_longan__nano_1_1_screen.html#aef6d0d2822cdfe1fa9f9a98648946e86" title="private tester is_valid_char | char |" alt="" coords="203,136,351,177"/>
+<area shape="rect" id="node5" href="$class_longan__nano_1_1_display.html#a1181e774d7e66c6f42da00df754447f7" title="public method register_sprite | int | int | int | int | uint16_t * |" alt="" coords="201,201,352,243"/>
+<area shape="rect" id="node6" href="$class_longan__nano_1_1_screen.html#aa71dd5a5b35417cdc40691c399993034" title="private setter report_error | Error |" alt="" coords="203,267,351,308"/>
+</map>

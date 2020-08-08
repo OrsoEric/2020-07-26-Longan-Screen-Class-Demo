@@ -1,0 +1,13 @@
+<map id="Longan_nano::Display::draw_sprite" name="Longan_nano::Display::draw_sprite">
+<area shape="rect" id="node1" title="public method draw_sprite | int | int | int | int | uint16_t |" alt="" coords="5,203,156,244"/>
+<area shape="rect" id="node2" href="$class_longan__nano_1_1_display.html#a1181e774d7e66c6f42da00df754447f7" title="public method register_sprite | int | int | int | int | uint16_t * |" alt="" coords="204,169,355,211"/>
+<area shape="rect" id="node3" href="$class_longan__nano_1_1_display.html#afe002dea09973c6f6454dbc1357f1135" title="public method update_sprite | void |" alt="" coords="204,235,355,276"/>
+<area shape="rect" id="node4" href="$class_longan__nano_1_1_display.html#a09bd47bfa318c79c404eee99b2244e17" title="Private HAL Method dma_send_map16 | uint16_t * | uint16_t |." alt="" coords="403,5,553,47"/>
+<area shape="rect" id="node5" href="$class_longan__nano_1_1_display.html#a1d31651b718d0a6ea74ab64e3213012e" title="Private HAL Method dma_send_map16 | uint16_t * | uint16_t |." alt="" coords="403,71,553,112"/>
+<area shape="rect" id="node6" href="$class_longan__nano_1_1_display.html#adb2c68dbb10b79739c643bd1e4486dee" title="Private HAL Method is_spi_done_tx | void." alt="" coords="403,136,553,177"/>
+<area shape="rect" id="node7" href="$class_longan__nano_1_1_display.html#a70fa4807fc25596f231cbb2a29556b96" title="Private HAL Method is_spi_idle | void." alt="" coords="403,201,553,243"/>
+<area shape="rect" id="node8" href="$class_longan__nano_1_1_display.html#ade649f52fde91aced8a4d3ecfb3b0c64" title="Private HAL Method rs_mode_cmd | void |." alt="" coords="403,267,553,308"/>
+<area shape="rect" id="node9" href="$class_longan__nano_1_1_display.html#a0334d274f9e739413c822d148d0e640a" title="Private HAL Method rs_mode_data | void |." alt="" coords="403,332,553,373"/>
+<area shape="rect" id="node10" href="$class_longan__nano_1_1_display.html#aae670a881d96c6c84116a7cb93c3c182" title="Private HAL Method spi_set_16bit | void |." alt="" coords="403,397,553,439"/>
+<area shape="rect" id="node11" href="$class_longan__nano_1_1_display.html#a4db660bbfaf760d0fc649ba70271aa45" title="Private HAL Method spi_set_8bit | void |." alt="" coords="403,463,553,504"/>
+</map>

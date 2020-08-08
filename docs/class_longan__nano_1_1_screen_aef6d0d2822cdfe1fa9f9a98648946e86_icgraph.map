@@ -1,0 +1,17 @@
+<map id="Longan_nano::Screen::is_valid_char" name="Longan_nano::Screen::is_valid_char">
+<area shape="rect" id="node1" title="private tester is_valid_char | char |" alt="" coords="500,201,648,243"/>
+<area shape="rect" id="node2" href="$class_longan__nano_1_1_screen.html#ad58530ca58e16be898490697b4aa7ed6" title="private tester is_same_sprite | Frame_buffer_sprite | Frame_buffer_sprite |" alt="" coords="302,39,450,80"/>
+<area shape="rect" id="node4" href="$class_longan__nano_1_1_screen.html#af4b6472c0a2730fea3aedf6b85d46553" title="private tester is_using_background | uint8_t |" alt="" coords="300,201,452,243"/>
+<area shape="rect" id="node10" href="$class_longan__nano_1_1_screen.html#aa72b68dd9941f57d1e88f51619e97c2c" title="private tester is_using_foreground | uint8_t |" alt="" coords="302,136,450,177"/>
+<area shape="rect" id="node11" href="$class_longan__nano_1_1_screen.html#ac08e8a782beebecbf5bb51de9e7dfcfa" title="public method print | int | int | char | Color | Color" alt="" coords="302,420,450,461"/>
+<area shape="rect" id="node14" href="$class_longan__nano_1_1_screen.html#a2d92bb4eddb7cbe9d4c0fc7bd170c476" title="private method register_sprite | uint16_t | uint16_t |" alt="" coords="302,296,450,337"/>
+<area shape="rect" id="node3" href="$class_longan__nano_1_1_screen.html#a779cfda37ad23455337f2c12463c238f" title="private tester update_sprite | uint16_t | uint16_t | Frame_buffer_sprite |" alt="" coords="104,5,252,47"/>
+<area shape="rect" id="node5" href="$class_longan__nano_1_1_screen.html#abd1e539d0d73e54c081fac097a0fa826" title="public method change_color | Color | Color |" alt="" coords="104,71,252,112"/>
+<area shape="rect" id="node6" href="$class_longan__nano_1_1_screen.html#aea96734648fc502b0537cb7ab5a97745" title="public setter set_color | int | int | Color | Color" alt="" coords="104,201,252,243"/>
+<area shape="rect" id="node7" href="$class_longan__nano_1_1_screen.html#a06dd6e276d80eccb268119c9671fc6ba" title="public setter set_default_colors | Color | Color" alt="" coords="104,136,252,177"/>
+<area shape="rect" id="node9" href="$class_longan__nano_1_1_screen.html#a53c18392adfece04997dfefd5f3efd75" title="public setter set_palette_color | Color | uint8_t | uint8_t | uint8_t |" alt="" coords="104,267,252,308"/>
+<area shape="rect" id="node8" href="$main_8cpp.html#a840291bc02cba5474a4cb46a9b9566fe" title=" " alt="" coords="5,369,56,395"/>
+<area shape="rect" id="node12" href="$class_longan__nano_1_1_screen.html#af5275ecefeb2d6683680ac757442ed8f" title="public method print | int | int | char | Color" alt="" coords="104,449,252,491"/>
+<area shape="rect" id="node13" href="$class_longan__nano_1_1_screen.html#a2fc1acd1512637d55c322a607c4fb966" title="public method print_err | int | int |" alt="" coords="104,515,252,556"/>
+<area shape="rect" id="node15" href="$class_longan__nano_1_1_screen.html#a41231465aef854327654ff55d5f5fdb3" title="public method update | void" alt="" coords="104,332,252,373"/>
+</map>

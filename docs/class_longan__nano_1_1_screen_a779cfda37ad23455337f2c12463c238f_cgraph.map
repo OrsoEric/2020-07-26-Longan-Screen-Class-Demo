@@ -1,0 +1,6 @@
+<map id="Longan_nano::Screen::update_sprite" name="Longan_nano::Screen::update_sprite">
+<area shape="rect" id="node1" title="private tester update_sprite | uint16_t | uint16_t | Frame_buffer_sprite |" alt="" coords="5,39,153,80"/>
+<area shape="rect" id="node2" href="$class_longan__nano_1_1_screen.html#ad58530ca58e16be898490697b4aa7ed6" title="private tester is_same_sprite | Frame_buffer_sprite | Frame_buffer_sprite |" alt="" coords="201,5,349,47"/>
+<area shape="rect" id="node4" href="$class_longan__nano_1_1_screen.html#aa71dd5a5b35417cdc40691c399993034" title="private setter report_error | Error |" alt="" coords="201,71,349,112"/>
+<area shape="rect" id="node3" href="$class_longan__nano_1_1_screen.html#aef6d0d2822cdfe1fa9f9a98648946e86" title="private tester is_valid_char | char |" alt="" coords="397,5,545,47"/>
+</map>

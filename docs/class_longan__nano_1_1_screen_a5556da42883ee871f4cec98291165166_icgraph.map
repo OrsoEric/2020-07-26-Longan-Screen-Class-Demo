@@ -1,0 +1,6 @@
+<map id="Longan_nano::Screen::init_fsm" name="Longan_nano::Screen::init_fsm">
+<area shape="rect" id="node1" title="private init init_fsm | void |" alt="" coords="300,39,448,80"/>
+<area shape="rect" id="node2" href="$class_longan__nano_1_1_screen.html#ab74631f68080f6f32eaab12d8332f236" title="public init init | void" alt="" coords="104,5,252,47"/>
+<area shape="rect" id="node4" href="$class_longan__nano_1_1_screen.html#a41231465aef854327654ff55d5f5fdb3" title="public method update | void" alt="" coords="104,71,252,112"/>
+<area shape="rect" id="node3" href="$main_8cpp.html#a840291bc02cba5474a4cb46a9b9566fe" title=" " alt="" coords="5,46,56,73"/>
+</map>

@@ -102,27 +102,27 @@ namespace User
 //! @class 		String
 /************************************************************************************/
 //!	@author		Orso Eric
-//! @version	2020-07-27
+//! @version	2020-08-08
 //! @brief		String <-> Number conversion using standard c strings to avoid std::string under the hood
-//! @pre		None
 //! @bug		None
 //! @warning	None
-//! @todo		todo list
 //! @copyright	BSD 3-Clause License Copyright (c) 2020, Orso Eric
 //! @details
-//!	    2020-07-27
-//! Encapsulate in class form
-//! Transplant u8, s8, u16, s16, u32 and s32 methods from the 2019-11-07 At_string V2 library
-//!	Added safety checks and option to disable them in release
-//!	Use C++ overloading and make use of num_to_str method. No longer calling the wrong conversion method
-//!	Tested U8 and S8 methods. Test safety by providing shorter string: SUCCESS
-//!	U16 and S16 methods can call the U8 conversion when number is small enough
-//! Tested U16 and S16 methods: SUCCESS
-//!	Tested U32 and S32. The test example only test S16 as there are problems with %d
-//!	Engineering format string
-//!		2020-07-29
-//!	Tested signed and unsigned integer engineering format string generation
-//! Added base 10^X exponent to eng conversion. It's meant to allow user to specify a multiplier when using inegers. e.g. 1000 means 100.0%
+//!	\n      2020-07-27
+//!	\n Encapsulate in class form
+//!	\n Transplant u8, s8, u16, s16, u32 and s32 methods from the 2019-11-07 At_string V2 library
+//!	\n	Added safety checks and option to disable them in release
+//!	\n	Use C++ overloading and make use of num_to_str method. No longer calling the wrong conversion method
+//!	\n	Tested U8 and S8 methods. Test safety by providing shorter string: SUCCESS
+//!	\n	U16 and S16 methods can call the U8 conversion when number is small enough
+//!	\n Tested U16 and S16 methods: SUCCESS
+//!	\n	Tested U32 and S32. The test example only test S16 as there are problems with %d
+//!	\n	Engineering format string
+//!	\n		2020-07-29
+//!	\n	Tested signed and unsigned integer engineering format string generation
+//!	\n Added base 10^X exponent to eng conversion. It's meant to allow user to specify a multiplier when using inegers. e.g. 1000 means 100.0%
+//! \n      2020-08-08
+//! \n Clean Up Doxygen documentation
 /************************************************************************************/
 
 class String
@@ -139,7 +139,6 @@ class String
         //!	@brief Constructor
         //!	String | void
         /***************************************************************************/
-        // @param
         //! @return no return
         //!	@details
         //! Empty constructor
@@ -187,6 +186,7 @@ class String
         **********************************************************************************************************************************************************
         *********************************************************************************************************************************************************/
 
+        //! @brief Configurations for the String class
         typedef enum _Config
         {
             //Safety checks. Can be disabled for performance in production
@@ -232,7 +232,7 @@ class String
         //! @param str		| const char * | return string provied by the caller
         //! @return uint8_t	| number of digits written in the string E.g. writing "255" returns 3. writing "0" returns 1 | 0 means no digits were written: fail
         //! @details
-        //! convert a U8 into a string
+        //! \n convert a U8 into a string
         /***************************************************************************/
 
         static uint8_t num_to_str( uint8_t num, uint8_t str_len, char *str )
@@ -340,7 +340,7 @@ class String
         //! @param str		| const char * | return string provied by the caller
         //! @return uint8_t	| number of digits written in the string
         //! @details
-        //!	convert a S8 into a string. Mostly does sign correction. Make use of the U8 method for the actual conversion.
+        //!	\n convert a S8 into a string. Mostly does sign correction. Make use of the U8 method for the actual conversion.
         /***************************************************************************/
 
         static uint8_t num_to_str( int8_t num, uint8_t str_len, char *str )
@@ -413,7 +413,7 @@ class String
         //! @param str		| const char * | return string provied by the caller
         //! @return uint8_t	| number of digits written in the string E.g. writing "255" returns 3. writing "0" returns 1 | 0 means no digits were written: fail
         //! @details
-        //!	convert a U16 into a string. Make use of the U8 method for small numbers
+        //! \n	convert a U16 into a string. Make use of the U8 method for small numbers
         /***************************************************************************/
 
         static uint8_t num_to_str( uint16_t num, uint8_t str_len, char *str )
@@ -532,7 +532,7 @@ class String
         //! @return uint8_t	| number of digits written in the string
         //! @brief Convert an int16_t to string
         //! @details
-        //!	convert a S16 into a string. Does mostly sign conversion. Make use of the U8 and U16 methods for the actual conversion.
+        //! \n	convert a S16 into a string. Does mostly sign conversion. Make use of the U8 and U16 methods for the actual conversion.
         /***************************************************************************/
 
         static uint8_t num_to_str( int16_t num, uint8_t str_len, char *str )
@@ -615,7 +615,7 @@ class String
         //! @param str		| const char * | return string provied by the caller
         //! @return uint8_t	| number of digits written in the string E.g. writing "255" returns 3. writing "0" returns 1 | 0 means no digits were written: fail
         //! @details
-        //! convert a U32 into a string
+        //! \n convert a U32 into a string
         /***************************************************************************/
 
         static uint8_t num_to_str( uint32_t num, uint8_t str_len, char *str )
@@ -746,7 +746,7 @@ class String
         //! @param str		| const char * | return string provied by the caller
         //! @return uint8_t	| number of digits written in the string
         //! @details
-        //!	convert a S32 into a string. Does mostly sign conversion. Make use of the U8 and U16 methods for the actual conversion.
+        //! \n	convert a S32 into a string. Does mostly sign conversion. Make use of the U8 and U16 methods for the actual conversion.
         /***************************************************************************/
 
         static uint8_t num_to_str( int32_t num, uint8_t str_len, char *str )
@@ -829,10 +829,10 @@ class String
 
         /***************************************************************************/
         //!	@brief public static method
-        //!	num_to_eng | uint32_t | uint8_t | char * |
+        //! \n	num_to_eng | uint32_t | uint8_t | char * |
         /***************************************************************************/
         //! @param num		| int32_t | number to be converted
-        //! @param exp		| int8_t | base 10^x eponent of the number. E.G. the user might have provided a number in millivolts, exponent -3
+        //! @param num_exp	| int8_t | base 10^x eponent of the number. E.G. the user might have provided a number in millivolts, exponent -3
         //!	@param str_len	| uint8_t | length of the provided string. Avoids overflow. Include terminator. Must be at least 7
         //! @param str		| const char * | return string provied by the caller
         //! @return uint8_t	| number of digits written in the string, not including terminator
@@ -1016,12 +1016,12 @@ class String
         //!	num_to_eng | int32_t | uint8_t | const char * |
         /***************************************************************************/
         //! @param num		| int32_t | number to be converted
-        //! @param exp		| int8_t | base 10^x eponent of the number. E.G. the user might have provided a number in millivolts, exponent -3
+        //! @param num_exp		| int8_t | base 10^x eponent of the number. E.G. the user might have provided a number in millivolts, exponent -3
         //!	@param str_len	| uint8_t | length of the provided string. Avoids overflow. Include terminator. Must be at least 7
         //! @param str		| const char * | return string provied by the caller
         //! @return uint8_t	| number of digits written in the string, not including terminator
         //! @details
-        //!	wrapper
+        //! \n	wrapper
         /***************************************************************************/
 
         static uint8_t num_to_eng( int32_t num, int8_t num_exp, uint8_t str_len, char *str )
@@ -1090,12 +1090,11 @@ class String
         //!	num_to_eng | uint32_t | uint8_t | const char * |
         /***************************************************************************/
         //! @param num		| int32_t | number to be converted
-        //! @param exp		| int8_t | base 10^x eponent of the number. E.G. the user might have provided a number in millivolts, exponent -3
         //!	@param str_len	| uint8_t | length of the provided string. Avoids overflow. Include terminator. Must be at least 7
         //! @param str		| const char * | return string provied by the caller
         //! @return uint8_t	| number of digits written in the string, not including terminator
         //! @details
-        //!	wrapper
+        //! \n	wrapper
         /***************************************************************************/
 
         static inline uint8_t num_to_eng( uint32_t num, uint8_t str_len, char *str )
@@ -1121,12 +1120,11 @@ class String
         //!	num_to_eng | int32_t | uint8_t | const char * |
         /***************************************************************************/
         //! @param num		| int32_t | number to be converted
-        //! @param exp		| int8_t | base 10^x eponent of the number. E.G. the user might have provided a number in millivolts, exponent -3
         //!	@param str_len	| uint8_t | length of the provided string. Avoids overflow. Include terminator. Must be at least 7
         //! @param str		| const char * | return string provied by the caller
         //! @return uint8_t	| number of digits written in the string, not including terminator
         //! @details
-        //!	wrapper
+        //! \n	wrapper
         /***************************************************************************/
 
         static inline uint8_t num_to_eng( int32_t num, uint8_t str_len, char *str )

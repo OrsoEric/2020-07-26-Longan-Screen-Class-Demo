@@ -1,0 +1,7 @@
+<map id="Longan_nano::Screen::set_format" name="Longan_nano::Screen::set_format">
+<area shape="rect" id="node1" title="public setter set_format | int | Format_align | Format_format |" alt="" coords="397,64,545,105"/>
+<area shape="rect" id="node2" href="$class_longan__nano_1_1_screen.html#a25be7710fcf71dadfe6ed58406cf62c5" title="private init init_class_vars | void |" alt="" coords="201,5,349,47"/>
+<area shape="rect" id="node4" href="$main_8cpp.html#a840291bc02cba5474a4cb46a9b9566fe" title=" " alt="" coords="54,101,105,127"/>
+<area shape="rect" id="node5" href="$class_longan__nano_1_1_screen.html#a2fc1acd1512637d55c322a607c4fb966" title="public method print_err | int | int |" alt="" coords="201,123,349,164"/>
+<area shape="rect" id="node3" href="$class_longan__nano_1_1_screen.html#a87e2898ed57fc8b69439423de049a962" title="empty constructor Screen | void" alt="" coords="5,5,153,47"/>
+</map>

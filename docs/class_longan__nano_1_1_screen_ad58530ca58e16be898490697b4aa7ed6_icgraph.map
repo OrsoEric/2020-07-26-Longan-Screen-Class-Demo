@@ -1,0 +1,4 @@
+<map id="Longan_nano::Screen::is_same_sprite" name="Longan_nano::Screen::is_same_sprite">
+<area shape="rect" id="node1" title="private tester is_same_sprite | Frame_buffer_sprite | Frame_buffer_sprite |" alt="" coords="201,5,349,47"/>
+<area shape="rect" id="node2" href="$class_longan__nano_1_1_screen.html#a779cfda37ad23455337f2c12463c238f" title="private tester update_sprite | uint16_t | uint16_t | Frame_buffer_sprite |" alt="" coords="5,5,153,47"/>
+</map>

@@ -1,0 +1,7 @@
+<map id="Longan_nano::Chrono::stop" name="Longan_nano::Chrono::stop">
+<area shape="rect" id="node1" title="public method stop | void" alt="" coords="397,68,545,109"/>
+<area shape="rect" id="node2" href="$class_longan__nano_1_1_chrono.html#a29ec9ae0be4b586ee910d61e0974f783" title="private method compute_elapsed | uint64_t | uint64_t | Unit |" alt="" coords="201,39,349,80"/>
+<area shape="rect" id="node5" href="$main_8cpp.html#a840291bc02cba5474a4cb46a9b9566fe" title=" " alt="" coords="250,105,301,131"/>
+<area shape="rect" id="node3" href="$class_longan__nano_1_1_chrono.html#a6c57b7f248727bf4960bd8cdb8915038" title="public getter get_elapsed | Unit |" alt="" coords="5,5,153,47"/>
+<area shape="rect" id="node4" href="$class_longan__nano_1_1_chrono.html#afbf0f150bb9480f65cc8daae5c99d343" title="public method stop | Unit |" alt="" coords="5,71,153,112"/>
+</map>

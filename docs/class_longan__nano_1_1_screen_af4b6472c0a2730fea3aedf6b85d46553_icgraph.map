@@ -1,0 +1,8 @@
+<map id="Longan_nano::Screen::is_using_background" name="Longan_nano::Screen::is_using_background">
+<area shape="rect" id="node1" title="private tester is_using_background | uint8_t |" alt="" coords="300,104,452,145"/>
+<area shape="rect" id="node2" href="$class_longan__nano_1_1_screen.html#abd1e539d0d73e54c081fac097a0fa826" title="public method change_color | Color | Color |" alt="" coords="104,5,252,47"/>
+<area shape="rect" id="node3" href="$class_longan__nano_1_1_screen.html#aea96734648fc502b0537cb7ab5a97745" title="public setter set_color | int | int | Color | Color" alt="" coords="104,71,252,112"/>
+<area shape="rect" id="node4" href="$class_longan__nano_1_1_screen.html#a06dd6e276d80eccb268119c9671fc6ba" title="public setter set_default_colors | Color | Color" alt="" coords="104,136,252,177"/>
+<area shape="rect" id="node6" href="$class_longan__nano_1_1_screen.html#a53c18392adfece04997dfefd5f3efd75" title="public setter set_palette_color | Color | uint8_t | uint8_t | uint8_t |" alt="" coords="104,201,252,243"/>
+<area shape="rect" id="node5" href="$main_8cpp.html#a840291bc02cba5474a4cb46a9b9566fe" title=" " alt="" coords="5,143,56,170"/>
+</map>

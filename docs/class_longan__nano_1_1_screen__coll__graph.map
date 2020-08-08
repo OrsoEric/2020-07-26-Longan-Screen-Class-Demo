@@ -1,0 +1,8 @@
+<map id="Longan_nano::Screen" name="Longan_nano::Screen">
+<area shape="rect" id="node1" title="Longan Nano Screen Class." alt="" coords="559,105,707,131"/>
+<area shape="rect" id="node2" href="$class_longan__nano_1_1_display.html" title="Longan Nano Display Driver." alt="" coords="255,13,405,39"/>
+<area shape="rect" id="node3" href="$struct_longan__nano_1_1_display_1_1___sprite.html" title="Sprite informations." alt="" coords="5,5,156,47"/>
+<area shape="rect" id="node4" href="$struct_longan__nano_1_1_screen_1_1___frame__buffer__sprite.html" title="Structure that describes a sprite in the sprite frame buffer." alt="" coords="255,64,405,105"/>
+<area shape="rect" id="node5" href="$struct_longan__nano_1_1_screen_1_1___fsm__status.html" title="Status of the update FSM." alt="" coords="256,129,404,171"/>
+<area shape="rect" id="node6" href="$struct_longan__nano_1_1_screen_1_1___format__number.html" title="number format to be printed by the print number method" alt="" coords="256,195,404,236"/>
+</map>

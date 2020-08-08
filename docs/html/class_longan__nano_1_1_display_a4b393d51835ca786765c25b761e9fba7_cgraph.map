@@ -1,5 +1,0 @@
-<map id="Longan_nano::Display::draw_sprite" name="Longan_nano::Display::draw_sprite">
-<area shape="rect" id="node1" title="public method draw_sprite | int | int | int | int | uint16_t |" alt="" coords="5,39,156,80"/>
-<area shape="rect" id="node2" href="$class_longan__nano_1_1_display.html#a1181e774d7e66c6f42da00df754447f7" title="public method register_sprite | int | int | int | int | uint16_t * |" alt="" coords="204,5,355,47"/>
-<area shape="rect" id="node3" href="$class_longan__nano_1_1_display.html#afe002dea09973c6f6454dbc1357f1135" title="public method update_sprite | void |" alt="" coords="204,71,355,112"/>
-</map>

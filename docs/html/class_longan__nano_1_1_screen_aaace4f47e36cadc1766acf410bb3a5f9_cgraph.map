@@ -1,8 +1,0 @@
-<map id="Longan_nano::Screen::reset_colors" name="Longan_nano::Screen::reset_colors">
-<area shape="rect" id="node1" title="public init reset_colors |" alt="" coords="5,71,153,112"/>
-<area shape="rect" id="node2" href="$class_longan__nano_1_1_display.html#a1d5115838177c5f3d011bc965d74a91b" title="public method clear | void |" alt="" coords="201,71,352,112"/>
-<area shape="rect" id="node3" href="$class_longan__nano_1_1_display.html#a668c59555e7024b2505ee68547db2e4f" title="public method draw_sprite | int | int | int | int | uint16_t * |" alt="" coords="400,37,551,79"/>
-<area shape="rect" id="node6" href="$class_longan__nano_1_1_display.html#a4043c4f00415badd75bac95b14a16feb" title="Public Method color | uint8_t | uint8_t | uint8_t |." alt="" coords="400,103,551,144"/>
-<area shape="rect" id="node4" href="$class_longan__nano_1_1_display.html#a1181e774d7e66c6f42da00df754447f7" title="public method register_sprite | int | int | int | int | uint16_t * |" alt="" coords="599,5,749,47"/>
-<area shape="rect" id="node5" href="$class_longan__nano_1_1_display.html#afe002dea09973c6f6454dbc1357f1135" title="public method update_sprite | void |" alt="" coords="599,71,749,112"/>
-</map>

@@ -1,0 +1,7 @@
+<map id="Longan_nano::Screen::report_error" name="Longan_nano::Screen::report_error">
+<area shape="rect" id="node1" title="private setter report_error | Error |" alt="" coords="496,64,644,105"/>
+<area shape="rect" id="node2" href="$class_longan__nano_1_1_screen.html#a2d92bb4eddb7cbe9d4c0fc7bd170c476" title="private method register_sprite | uint16_t | uint16_t |" alt="" coords="300,5,448,47"/>
+<area shape="rect" id="node3" href="$class_longan__nano_1_1_screen.html#a41231465aef854327654ff55d5f5fdb3" title="public method update | void" alt="" coords="104,35,252,76"/>
+<area shape="rect" id="node5" href="$class_longan__nano_1_1_screen.html#a779cfda37ad23455337f2c12463c238f" title="private tester update_sprite | uint16_t | uint16_t | Frame_buffer_sprite |" alt="" coords="300,123,448,164"/>
+<area shape="rect" id="node4" href="$main_8cpp.html#a840291bc02cba5474a4cb46a9b9566fe" title=" " alt="" coords="5,42,56,69"/>
+</map>

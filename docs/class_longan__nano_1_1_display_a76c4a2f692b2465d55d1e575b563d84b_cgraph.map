@@ -1,0 +1,9 @@
+<map id="Longan_nano::Display::init_st7735" name="Longan_nano::Display::init_st7735">
+<area shape="rect" id="node1" title="Private init init_st7735 | void |." alt="" coords="5,169,156,211"/>
+<area shape="rect" id="node2" href="$class_longan__nano_1_1_display.html#a449bf71b7f4c2d0c016eca52313ad76f" title="Private HAL Method cs_active | void |." alt="" coords="204,5,355,47"/>
+<area shape="rect" id="node3" href="$class_longan__nano_1_1_display.html#ade649f52fde91aced8a4d3ecfb3b0c64" title="Private HAL Method rs_mode_cmd | void |." alt="" coords="204,71,355,112"/>
+<area shape="rect" id="node4" href="$class_longan__nano_1_1_display.html#a0334d274f9e739413c822d148d0e640a" title="Private HAL Method rs_mode_data | void |." alt="" coords="204,136,355,177"/>
+<area shape="rect" id="node5" href="$class_longan__nano_1_1_display.html#a4db660bbfaf760d0fc649ba70271aa45" title="Private HAL Method spi_set_8bit | void |." alt="" coords="204,201,355,243"/>
+<area shape="rect" id="node6" href="$class_longan__nano_1_1_display.html#ab212a662719af6a64351f80266ce07f0" title="Private HAL Method spi_wait_idle | void." alt="" coords="204,267,355,308"/>
+<area shape="rect" id="node7" href="$class_longan__nano_1_1_display.html#ad438fdc91750ebb4af80307e752e5ec6" title="Private HAL Method spi_wait_tbe | void |." alt="" coords="204,332,355,373"/>
+</map>

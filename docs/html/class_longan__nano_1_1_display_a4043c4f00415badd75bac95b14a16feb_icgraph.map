@@ -1,9 +1,0 @@
-<map id="Longan_nano::Display::color" name="Longan_nano::Display::color">
-<area shape="rect" id="node1" title="Public Method color | uint8_t | uint8_t | uint8_t |." alt="" coords="499,64,649,105"/>
-<area shape="rect" id="node2" href="$class_longan__nano_1_1_screen.html#a5b3779b2374eaf15434bcde1288d6167" title="public setter set_palette_color | Color | uint8_t | uint8_t | uint8_t |" alt="" coords="301,5,449,47"/>
-<area shape="rect" id="node3" href="$class_longan__nano_1_1_screen.html#aee4aa14d07031a82e7082cbae8ae1189" title="public method paint | int | int | Color |" alt="" coords="104,60,252,101"/>
-<area shape="rect" id="node5" href="$class_longan__nano_1_1_display.html#a1d5115838177c5f3d011bc965d74a91b" title="public method clear | void |" alt="" coords="300,125,451,167"/>
-<area shape="rect" id="node4" href="$main_8cpp.html#a840291bc02cba5474a4cb46a9b9566fe" title=" " alt="" coords="5,133,56,159"/>
-<area shape="rect" id="node6" href="$class_longan__nano_1_1_screen.html#ab74631f68080f6f32eaab12d8332f236" title="public init init | void" alt="" coords="104,125,252,167"/>
-<area shape="rect" id="node7" href="$class_longan__nano_1_1_screen.html#aaace4f47e36cadc1766acf410bb3a5f9" title="public init reset_colors |" alt="" coords="104,191,252,232"/>
-</map>

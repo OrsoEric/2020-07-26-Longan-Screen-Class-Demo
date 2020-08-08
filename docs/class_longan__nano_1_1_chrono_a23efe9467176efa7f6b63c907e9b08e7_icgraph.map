@@ -1,0 +1,13 @@
+<map id="Longan_nano::Chrono::compute_tick_per_time_unit" name="Longan_nano::Chrono::compute_tick_per_time_unit">
+<area shape="rect" id="node1" title="private method compute_tick_per_time_unit | Unit |" alt="" coords="705,159,899,200"/>
+<area shape="rect" id="node2" href="$class_longan__nano_1_1_chrono.html#a18294c54346272810c5838bbf8c0b1cb" title="private method compute_accumulator | uint64_t | Unit |" alt="" coords="499,64,657,105"/>
+<area shape="rect" id="node6" href="$class_longan__nano_1_1_chrono.html#a29ec9ae0be4b586ee910d61e0974f783" title="private method compute_elapsed | uint64_t | uint64_t | Unit |" alt="" coords="504,159,652,200"/>
+<area shape="rect" id="node9" href="$class_longan__nano_1_1_chrono.html#a3e6fd754c768a7350b06bbc1a02befdb" title="public static method delay | Unit | unsigned int |" alt="" coords="504,224,652,265"/>
+<area shape="rect" id="node3" href="$class_longan__nano_1_1_chrono.html#a2ec808f071111bdc52297e5ec98cdade" title="public method accumulate | Unit unit |" alt="" coords="301,5,449,47"/>
+<area shape="rect" id="node4" href="$class_longan__nano_1_1_chrono.html#a5aa3055c5eaab315aaaf05556f1f9c33" title="public getter get_accumulator | Unit |" alt="" coords="104,96,252,137"/>
+<area shape="rect" id="node5" href="$main_8cpp.html#a840291bc02cba5474a4cb46a9b9566fe" title=" " alt="" coords="5,167,56,194"/>
+<area shape="rect" id="node7" href="$class_longan__nano_1_1_chrono.html#a6c57b7f248727bf4960bd8cdb8915038" title="public getter get_elapsed | Unit |" alt="" coords="301,123,449,164"/>
+<area shape="rect" id="node8" href="$class_longan__nano_1_1_chrono.html#afbf0f150bb9480f65cc8daae5c99d343" title="public method stop | Unit |" alt="" coords="301,188,449,229"/>
+<area shape="rect" id="node10" href="$class_longan__nano_1_1_display.html#ae1af4d1ed35d43fd66cdd4f8573ffe68" title="Public init init | void |." alt="" coords="300,253,451,295"/>
+<area shape="rect" id="node11" href="$class_longan__nano_1_1_screen.html#ab74631f68080f6f32eaab12d8332f236" title="public init init | void" alt="" coords="104,192,252,233"/>
+</map>

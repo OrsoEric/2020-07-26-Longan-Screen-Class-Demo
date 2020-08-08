@@ -1,0 +1,6 @@
+<map id="Longan_nano::Chrono::compute_accumulator" name="Longan_nano::Chrono::compute_accumulator">
+<area shape="rect" id="node1" title="private method compute_accumulator | uint64_t | Unit |" alt="" coords="300,39,459,80"/>
+<area shape="rect" id="node2" href="$class_longan__nano_1_1_chrono.html#a2ec808f071111bdc52297e5ec98cdade" title="public method accumulate | Unit unit |" alt="" coords="104,5,252,47"/>
+<area shape="rect" id="node3" href="$class_longan__nano_1_1_chrono.html#a5aa3055c5eaab315aaaf05556f1f9c33" title="public getter get_accumulator | Unit |" alt="" coords="104,71,252,112"/>
+<area shape="rect" id="node4" href="$main_8cpp.html#a840291bc02cba5474a4cb46a9b9566fe" title=" " alt="" coords="5,78,56,105"/>
+</map>

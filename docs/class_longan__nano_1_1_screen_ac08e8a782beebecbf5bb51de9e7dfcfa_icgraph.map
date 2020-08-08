@@ -1,0 +1,6 @@
+<map id="Longan_nano::Screen::print" name="Longan_nano::Screen::print">
+<area shape="rect" id="node1" title="public method print | int | int | char | Color | Color" alt="" coords="300,26,448,67"/>
+<area shape="rect" id="node2" href="$main_8cpp.html#a840291bc02cba5474a4cb46a9b9566fe" title=" " alt="" coords="5,37,56,64"/>
+<area shape="rect" id="node3" href="$class_longan__nano_1_1_screen.html#af5275ecefeb2d6683680ac757442ed8f" title="public method print | int | int | char | Color" alt="" coords="104,26,252,67"/>
+<area shape="rect" id="node4" href="$class_longan__nano_1_1_screen.html#a2fc1acd1512637d55c322a607c4fb966" title="public method print_err | int | int |" alt="" coords="104,91,252,133"/>
+</map>

@@ -8,10 +8,10 @@
 **         \
 **          \
 *****************************************************************************
-**	Longan Nano Display Driver
+**	Longan Nano Demo
 *****************************************************************************
 **  Development of the display class for the ST7735S LCD controller
-**  interfaced to the SPI0 of the Risc-V Longan Nano board
+**  Demo to show all the uses of the classes. Demo is selected using PA8 boot button
 **  Codesize exploded. -fno-exceptions as compiler option brought it back under control
 ****************************************************************************/
 
@@ -58,9 +58,9 @@ typedef enum _Config
     //Microseconds between led toggles
     LED_BLINK_US        = 250000,
     //Microseconds between calls of the demos. Various demos can be executed at differing rates depending on how many sprites they update
-    SLOW_DEMO_US        = 500000,
-    MEDIUM_DEMO_US      = 25000,
-    FAST_DEMO_US        = 1000,
+    SLOW_DEMO_US        = 750000,
+    MEDIUM_DEMO_US      = 50000,
+    FAST_DEMO_US        = 2000,
 } Config;
 
 //List of DEMOS
@@ -80,10 +80,12 @@ typedef enum _Demo
     TEST_NUMBERS,
     //Engineering format strings
     TEST_ENG_NUMBERS,
+    //Profiling +Pending for update
+    TEST_PENDING,
     //Test the change_color 
     TEST_CHANGE_COLORS,
-	//Profile execution time with constant workload
-	TEST_WORKLOAD,
+    //Profile execution time with constant workload
+    TEST_WORKLOAD,
     //Total number of demos installed
     NUM_DEMOS,
     //Maximum length of a demo string
@@ -164,7 +166,7 @@ int main( void )
     uint16_t demo_pre = 100;
 
     //Default Demo to be executed
-    Demo demo_index = Demo::TEST_WORKLOAD;
+    Demo demo_index = Demo::TEST_CLEAR_BLINK;
     //Demo is not initialized
     bool f_demo_init = false;
 
@@ -341,7 +343,7 @@ int main( void )
                     {
                         g_screen.reset_colors();
                         //Clear the screen
-                        g_screen.clear( Longan_nano::Screen::Color::BLACK );
+                        g_screen.clear( Longan_nano::Screen::Color::WHITE );
                         //Configure prescaler to achieve the correct execution time    
                         demo_pre = Config::SLOW_DEMO_US/Config::SCREEN_US;
                         //Demo is now initialized
@@ -624,6 +626,72 @@ int main( void )
                 }
 
                 //----------------------------------------------------------------
+                //	TEST_PENDING
+                //----------------------------------------------------------------
+                //	Test writing numbers on screen using the number to string screen print
+                //  Shows the number of sprites pending for update
+                
+                case Demo::TEST_PENDING:
+                {
+                    //If: demo is yet to be initialized
+                    if (f_demo_init == false)
+                    {
+                        g_screen.reset_colors();
+                        //Clear the screen
+                        g_screen.clear( Longan_nano::Screen::Color::BLACK );
+                        //Configure prescaler to achieve the correct execution time    
+                        demo_pre = Config::MEDIUM_DEMO_US/Config::SCREEN_US;
+                        //Demo is now initialized
+                        f_demo_init = true;
+                    }
+                    //If: demo is initialized and can be run
+                    else
+                    {     
+                        //Header
+                        g_screen.print( 0, 0, "DEMO: Profile eng" );
+                        g_screen.print( 1, 4, "|Time[s]|CPU [%]" );
+                        //Show uptime in microseconds
+                        int tmp_uptime;
+                        g_screen.print( 2, 0, "Time|" );
+                        g_screen.print( 2, 12, '|' );
+                        
+                        g_screen.set_format( User::String::STRING_SIZE_SENG -1, Longan_nano::Screen::Format_align::ADJ_RIGHT, Longan_nano::Screen::Format_format::ENG, -3 );
+                        tmp_uptime = timer_uptime.stop( Longan_nano::Chrono::Unit::milliseconds );
+                        g_screen.print( 2, 11, tmp_uptime );
+                        
+                        //Show cpu time spent updating the screen
+                        int tmp_screen;
+                        g_screen.print( 3, 0, "LCD |" );
+                        g_screen.print( 3, 12, '|' );
+                        tmp_screen = timer_screen.get_accumulator( Longan_nano::Chrono::Unit::milliseconds );
+                        g_screen.print( 3, 11, tmp_screen );
+                        //Compute CPU usage for the screen
+                        int64_t cpu_tmp = (int64_t)1 *tmp_screen *100000 /tmp_uptime;
+                        g_screen.set_format( User::String::STRING_SIZE_SENG -1, Longan_nano::Screen::Format_align::ADJ_RIGHT, Longan_nano::Screen::Format_format::ENG, -3 );
+                        g_screen.print( 3, 19, (int)cpu_tmp );
+
+                        //Show CPU time spent running the DEMO
+                        g_screen.print( 4, 0, "DEMO|" );
+                        g_screen.print( 4, 12, '|' );
+                        tmp_screen = timer_demo.get_accumulator( Longan_nano::Chrono::Unit::milliseconds );
+                        g_screen.print( 4, 11, tmp_screen );
+                        //Compute CPU usage for the DEMO
+                        cpu_tmp = (int64_t)1 *tmp_screen *100000 /tmp_uptime;
+                        g_screen.set_format( User::String::STRING_SIZE_SENG -1, Longan_nano::Screen::Format_align::ADJ_RIGHT, Longan_nano::Screen::Format_format::ENG, -3 );
+                        g_screen.print( 4, 19, (int)cpu_tmp );
+
+                        //Profile the number of sprites pending for update
+                        g_screen.set_format( 4, Longan_nano::Screen::Format_align::ADJ_LEFT, Longan_nano::Screen::Format_format::NUM );
+                        int pending_cnt = g_screen.get_pending();
+                        g_screen.print( 1, 0, pending_cnt);
+
+                        //Show the error of the screen library
+                        g_screen.print_err( 2, 13 );
+                    }
+                    break;
+                }
+
+                //----------------------------------------------------------------
                 //	TEST_CHANGE_COLORS
                 //----------------------------------------------------------------
                 //	Test the methods that handles the colors of the sprites without changing the content
@@ -709,7 +777,7 @@ int main( void )
                 //	TEST_WORKLOAD
                 //----------------------------------------------------------------
                 //	Profile execution time with constant workload
-				//	Allow to test improvements in the Driver Class and Screen Class
+                //	Allow to test improvements in the Driver Class and Screen Class
                 
                 case Demo::TEST_WORKLOAD:
                 {
@@ -727,7 +795,7 @@ int main( void )
                     //If: demo is initialized and can be run
                     else
                     {
-						//Print random color squares on the screen
+                        //Print random color squares on the screen
                         for (uint8_t t = 0;t < 10;t++)
                         {	
                             int th = g_rng_height( g_rng_engine );
@@ -736,22 +804,22 @@ int main( void )
                             //Ask the screen driver to print the character
                             g_screen.paint( th, tw, color_tmp );
                         }
-						
+                        
                         //Header
                         g_screen.print( 0, 0, "CPU |" );
-						g_screen.print( 0, 12, '|' );
-						
+                        g_screen.print( 0, 12, '|' );
                         
-						//Compute CPU usage for the screen
-						int tmp_uptime = timer_uptime.stop( Longan_nano::Chrono::Unit::milliseconds );
-						int tmp_deltat = timer_screen.get_accumulator( Longan_nano::Chrono::Unit::milliseconds );
+                        
+                        //Compute CPU usage for the screen
+                        int tmp_uptime = timer_uptime.stop( Longan_nano::Chrono::Unit::milliseconds );
+                        int tmp_deltat = timer_screen.get_accumulator( Longan_nano::Chrono::Unit::milliseconds );
                         int cpu_tmp = (int64_t)1 *tmp_deltat *100000 /tmp_uptime;
                         g_screen.set_format( User::String::STRING_SIZE_SENG -1, Longan_nano::Screen::Format_align::ADJ_RIGHT, Longan_nano::Screen::Format_format::ENG, -3 );
                         g_screen.print( 0, 11, (int)cpu_tmp );
                         //Compute CPU usage for the DEMO
-						tmp_deltat = timer_demo.get_accumulator( Longan_nano::Chrono::Unit::milliseconds );
+                        tmp_deltat = timer_demo.get_accumulator( Longan_nano::Chrono::Unit::milliseconds );
                         cpu_tmp = (int64_t)1 *tmp_deltat *100000 /tmp_uptime;
-						g_screen.set_format( User::String::STRING_SIZE_SENG -1, Longan_nano::Screen::Format_align::ADJ_RIGHT, Longan_nano::Screen::Format_format::ENG, -3 );
+                        g_screen.set_format( User::String::STRING_SIZE_SENG -1, Longan_nano::Screen::Format_align::ADJ_RIGHT, Longan_nano::Screen::Format_format::ENG, -3 );
                         g_screen.print( 0, 19, (int)cpu_tmp );
                     }
                     break;

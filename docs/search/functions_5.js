@@ -1,0 +1,20 @@
+var searchData=
+[
+  ['init_358',['init',['../class_longan__nano_1_1_leds.html#a9c3754d0f21406c6354c0de3465a9032',1,'Longan_nano::Leds::init()'],['../class_longan__nano_1_1_screen.html#ab74631f68080f6f32eaab12d8332f236',1,'Longan_nano::Screen::init()'],['../class_longan__nano_1_1_display.html#ae1af4d1ed35d43fd66cdd4f8573ffe68',1,'Longan_nano::Display::init()']]],
+  ['init_5fclass_5fvars_359',['init_class_vars',['../class_longan__nano_1_1_screen.html#a25be7710fcf71dadfe6ed58406cf62c5',1,'Longan_nano::Screen']]],
+  ['init_5fdefault_5fcolors_360',['init_default_colors',['../class_longan__nano_1_1_screen.html#abd195155d4fea2b0a4f2ec16c0a08701',1,'Longan_nano::Screen']]],
+  ['init_5fdma_361',['init_dma',['../class_longan__nano_1_1_display.html#a5d567cbf71e23028cc44335b671fe1d9',1,'Longan_nano::Display']]],
+  ['init_5fframe_5fbuffer_362',['init_frame_buffer',['../class_longan__nano_1_1_screen.html#af03618a1e93026129afe62a0125df3b2',1,'Longan_nano::Screen']]],
+  ['init_5ffsm_363',['init_fsm',['../class_longan__nano_1_1_screen.html#a5556da42883ee871f4cec98291165166',1,'Longan_nano::Screen']]],
+  ['init_5fgpio_364',['init_gpio',['../class_longan__nano_1_1_display.html#a2c96ac1b7d088e1b31987fb605d9a634',1,'Longan_nano::Display']]],
+  ['init_5fpa8_5fbutton_5finterrupt_365',['init_pa8_button_interrupt',['../main_8cpp.html#a268a4e6cd3eee328f4e1e01fed77db05',1,'main.cpp']]],
+  ['init_5fpalette_366',['init_palette',['../class_longan__nano_1_1_screen.html#ae9addca4141d58f5927fdd6fe54de881',1,'Longan_nano::Screen']]],
+  ['init_5fspi_367',['init_spi',['../class_longan__nano_1_1_display.html#a3fd406be6ba44689a2ee6cf054c12af3',1,'Longan_nano::Display']]],
+  ['init_5fst7735_368',['init_st7735',['../class_longan__nano_1_1_display.html#a76c4a2f692b2465d55d1e575b563d84b',1,'Longan_nano::Display']]],
+  ['is_5fsame_5fsprite_369',['is_same_sprite',['../class_longan__nano_1_1_screen.html#ad58530ca58e16be898490697b4aa7ed6',1,'Longan_nano::Screen']]],
+  ['is_5fspi_5fdone_5ftx_370',['is_spi_done_tx',['../class_longan__nano_1_1_display.html#adb2c68dbb10b79739c643bd1e4486dee',1,'Longan_nano::Display']]],
+  ['is_5fspi_5fidle_371',['is_spi_idle',['../class_longan__nano_1_1_display.html#a70fa4807fc25596f231cbb2a29556b96',1,'Longan_nano::Display']]],
+  ['is_5fusing_5fbackground_372',['is_using_background',['../class_longan__nano_1_1_screen.html#af4b6472c0a2730fea3aedf6b85d46553',1,'Longan_nano::Screen']]],
+  ['is_5fusing_5fforeground_373',['is_using_foreground',['../class_longan__nano_1_1_screen.html#aa72b68dd9941f57d1e88f51619e97c2c',1,'Longan_nano::Screen']]],
+  ['is_5fvalid_5fchar_374',['is_valid_char',['../class_longan__nano_1_1_screen.html#aef6d0d2822cdfe1fa9f9a98648946e86',1,'Longan_nano::Screen']]]
+];

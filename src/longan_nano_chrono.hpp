@@ -79,27 +79,27 @@ namespace Longan_nano
 //! @class 		Chrono
 /************************************************************************************/
 //!	@author		Orso Eric
-//! @version	2020-07-28
+//! @version	2020-08-08
 //! @brief		Deals with busy delays, elapsed time and accumulated time
 //! @bug		None
 //! @copyright	BSD 3-Clause License Copyright (c) 2020, Orso Eric
 //! @details
-//!	SysTick
-//!	Use 64b 27MHz SysTick timer.
-//!	History Version
-//! 	2020-07-20
-//!	Rework Utils library into Chrono library to add start/stop timer
-//!	"start" snaps the start timestamp at full resolution
-//!	"stop" snaps the stop timestamp at full resolution
-//!	"elapsed" returns the elapsed time between stop and start if valid. zero otherwise
-//!		2020-07-28
-//!	I need a method to accumulate execution time and profile how long an activity has taken
-//!	"accumulate" add stop-start to an internal accumulator at full resolution
-//!	Add combined "stop" "elapsed" implementation with better performance and fewer calls needed
-//! I can combine the stop and accumulator counters since i use one or the other
-//! I use a flag to handle initialization and invalid when switching between modes and automatically reset the accumulator
-//!		2020-08-04
-//!	Refactor to separate header and implementation
+//! \n	SysTick
+//! \n	Use 64b 27MHz SysTick timer.
+//! \n	History Version
+//! \n 	2020-07-20
+//! \n	Rework Utils library into Chrono library to add start/stop timer
+//! \n	"start" snaps the start timestamp at full resolution
+//! \n	"stop" snaps the stop timestamp at full resolution
+//! \n	"elapsed" returns the elapsed time between stop and start if valid. zero otherwise
+//! \n		2020-07-28
+//! \n	I need a method to accumulate execution time and profile how long an activity has taken
+//! \n	"accumulate" add stop-start to an internal accumulator at full resolution
+//! \n	Add combined "stop" "elapsed" implementation with better performance and fewer calls needed
+//! \n I can combine the stop and accumulator counters since i use one or the other
+//! \n I use a flag to handle initialization and invalid when switching between modes and automatically reset the accumulator
+//! \n		2020-08-04
+//! \n	Refactor to separate header and implementation
 /************************************************************************************/
 
 class Chrono
@@ -112,7 +112,7 @@ class Chrono
         **********************************************************************************************************************************************************
         *********************************************************************************************************************************************************/
 
-        //Configurations of the SysTick
+        //! @brief Configurations of the SysTick
         typedef enum _Config
         {
             PEDANTIC_CHECKS	= false,				//Pedantic checks inside the functions
@@ -120,7 +120,7 @@ class Chrono
             SYSTICK_PRE 	= 4,					//Prescaler for the systick timer
             TIME_INVALID	= -1,					//Return time in case time is invalid
         } Config;
-        //What time unit to use
+        //! @brief Possible time units. Same names as std::Chrono
         typedef enum _Unit
         {
             milliseconds,
@@ -133,7 +133,7 @@ class Chrono
         **********************************************************************************************************************************************************
         *********************************************************************************************************************************************************/
 
-		//Empty Constructor
+        //Empty Constructor
         Chrono( void );
 
         /*********************************************************************************************************************************************************
@@ -142,7 +142,7 @@ class Chrono
         **********************************************************************************************************************************************************
         *********************************************************************************************************************************************************/
 
-		//Empty Destructor
+        //Empty Destructor
         ~Chrono( void );
 
         /*********************************************************************************************************************************************************
@@ -150,33 +150,33 @@ class Chrono
         **	PUBLIC METHOD
         **********************************************************************************************************************************************************
         *********************************************************************************************************************************************************/
-		
-		//Snap the start time
+        
+        //Snap the start time
         void start( void );
-		//Snap the start time and invalidate the stop time and accumulator
-		void restart( void );
-		//Snap the stop time
+        //Snap the start time and invalidate the stop time and accumulator
+        void restart( void );
+        //Snap the stop time
         void stop( void );
-		//Snap the stop time and return the elapsed time
+        //Snap the stop time and return the elapsed time
         int32_t stop( Unit unit );
-		//Accumulate DeltaT
+        //Accumulate DeltaT
         bool accumulate( void );
-		//Accumulate DeltaT and return the accumulator time
+        //Accumulate DeltaT and return the accumulator time
         int32_t accumulate( Unit unit );
-		//Return the elapsed time
+        //Return the elapsed time
         int32_t get_elapsed( Unit unit );
-		//Return the accumulator time
+        //Return the accumulator time
         int32_t get_accumulator( Unit unit );
         
-		/*********************************************************************************************************************************************************
+        /*********************************************************************************************************************************************************
         **********************************************************************************************************************************************************
         **	PUBLIC STATIC METHOD
         **********************************************************************************************************************************************************
         *********************************************************************************************************************************************************/
 
-		//Systick timer frequency
+        //Systick timer frequency
         static unsigned int get_systick_freq( void );
-		//Busy wait. Blocking function
+        //Busy wait. Blocking function
         static bool delay( Unit unit, unsigned int delay_tmp );
 
     //Visible only inside the class
@@ -187,11 +187,11 @@ class Chrono
         **********************************************************************************************************************************************************
         *********************************************************************************************************************************************************/
 
-		//Compute the number of systick counts needed to count one time unit
+        //Compute the number of systick counts needed to count one time unit
         static uint32_t compute_tick_per_time_unit( Unit unit );
-		//use start and stop timestamp to compute the elapsed time in a given time unit
+        //use start and stop timestamp to compute the elapsed time in a given time unit
         int32_t compute_elapsed( uint64_t start, uint64_t stop, Unit unit );
-		//use start and stop timestamp to compute the elapsed time in a given time unit
+        //use start and stop timestamp to compute the elapsed time in a given time unit
         int32_t compute_accumulator( uint64_t accumulator, Unit unit );
 
         /*********************************************************************************************************************************************************
@@ -208,41 +208,41 @@ class Chrono
         uint64_t g_systick_stop;
 };	//End Class: Chrono
 
-	/*********************************************************************************************************************************************************
-	**********************************************************************************************************************************************************
-	**	CONSTRUCTORS
-	**********************************************************************************************************************************************************
-	*********************************************************************************************************************************************************/
+    /*********************************************************************************************************************************************************
+    **********************************************************************************************************************************************************
+    **	CONSTRUCTORS
+    **********************************************************************************************************************************************************
+    *********************************************************************************************************************************************************/
 
 /***************************************************************************/
 //!	@brief Empty Constructor
 //!	Chrono | void
 /***************************************************************************/
 //! @return void
-//! @details \n
-//!	Initialize timestamps to invalid
+//! @details
+//!	\n Initialize timestamps to invalid
 /***************************************************************************/
 
 Chrono::Chrono( void )
 {
-	//Initialize timestamps to invalid
-	this -> g_systick_start = Config::SYSTICK_INVALID;
-	this -> g_systick_stop = Config::SYSTICK_INVALID;
-	//Regular timer mode
-	this -> g_f_accumulator_mode = false;
-	
-	//----------------------------------------------------------------
-	//	RETURN
-	//----------------------------------------------------------------
-	
-	return;
+    //Initialize timestamps to invalid
+    this -> g_systick_start = Config::SYSTICK_INVALID;
+    this -> g_systick_stop = Config::SYSTICK_INVALID;
+    //Regular timer mode
+    this -> g_f_accumulator_mode = false;
+    
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
+    
+    return;
 }	//End Constructor: Chrono | void
 
-	/*********************************************************************************************************************************************************
-	**********************************************************************************************************************************************************
-	**	DESTRUCTORS
-	**********************************************************************************************************************************************************
-	*********************************************************************************************************************************************************/
+    /*********************************************************************************************************************************************************
+    **********************************************************************************************************************************************************
+    **	DESTRUCTORS
+    **********************************************************************************************************************************************************
+    *********************************************************************************************************************************************************/
 
 /***************************************************************************/
 //!	@brief Empty Destructor
@@ -253,18 +253,18 @@ Chrono::Chrono( void )
 
 Chrono::~Chrono( void )
 {
-	//----------------------------------------------------------------
-	//	RETURN
-	//----------------------------------------------------------------
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
 
-	return;
+    return;
 }
 
-	/*********************************************************************************************************************************************************
-	**********************************************************************************************************************************************************
-	**	PUBLIC METHOD
-	**********************************************************************************************************************************************************
-	*********************************************************************************************************************************************************/
+    /*********************************************************************************************************************************************************
+    **********************************************************************************************************************************************************
+    **	PUBLIC METHOD
+    **********************************************************************************************************************************************************
+    *********************************************************************************************************************************************************/
 
 /***************************************************************************/
 //!	@brief public method
@@ -272,23 +272,23 @@ Chrono::~Chrono( void )
 /***************************************************************************/
 //! @return void
 //! @details \n
-//!	Start the timer
+//! \n	Start the timer
 /***************************************************************************/
 
 void Chrono::start( void )
 {
-	//----------------------------------------------------------------
-	//	BODY
-	//----------------------------------------------------------------		
-	
-	//Snap timer start
-	this -> g_systick_start = get_timer_value();
-	
-	//----------------------------------------------------------------
-	//	RETURN
-	//----------------------------------------------------------------
-	
-	return;
+    //----------------------------------------------------------------
+    //	BODY
+    //----------------------------------------------------------------		
+    
+    //Snap timer start
+    this -> g_systick_start = get_timer_value();
+    
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
+    
+    return;
 }	//End method: start | void
 
 /***************************************************************************/
@@ -297,26 +297,26 @@ void Chrono::start( void )
 /***************************************************************************/
 //! @return void
 //! @details \n
-//!	Start the timer and invalidate the stop time and accumulator
+//! \n	Start the timer and invalidate the stop time and accumulator
 /***************************************************************************/
 
 void Chrono::restart( void )
 {
-	//----------------------------------------------------------------
-	//	BODY
-	//----------------------------------------------------------------		
-	
-	//Snap timer start
-	this -> g_systick_start = get_timer_value();
-	//Infalidate stop
-	this -> g_systick_stop = Config::SYSTICK_INVALID;
-	this -> g_f_accumulator_mode = false;
+    //----------------------------------------------------------------
+    //	BODY
+    //----------------------------------------------------------------		
+    
+    //Snap timer start
+    this -> g_systick_start = get_timer_value();
+    //Infalidate stop
+    this -> g_systick_stop = Config::SYSTICK_INVALID;
+    this -> g_f_accumulator_mode = false;
 
-	//----------------------------------------------------------------
-	//	RETURN
-	//----------------------------------------------------------------
-	
-	return;
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
+    
+    return;
 }	//End method: start | void
 
 /***************************************************************************/
@@ -325,68 +325,68 @@ void Chrono::restart( void )
 /***************************************************************************/
 //! @return void
 //! @details \n
-//!	Stop the timer. Snap the stop time
+//! \n	Stop the timer. Snap the stop time
 /***************************************************************************/
 
 void Chrono::stop( void )
 {
-	//----------------------------------------------------------------
-	//	BODY
-	//----------------------------------------------------------------		
-	
-	//Snap timer start
-	this -> g_systick_stop = get_timer_value();
-	//Regular timer mode
-	this -> g_f_accumulator_mode = false;
-	
-	//----------------------------------------------------------------
-	//	RETURN
-	//----------------------------------------------------------------
-	
-	return;
+    //----------------------------------------------------------------
+    //	BODY
+    //----------------------------------------------------------------		
+    
+    //Snap timer start
+    this -> g_systick_stop = get_timer_value();
+    //Regular timer mode
+    this -> g_f_accumulator_mode = false;
+    
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
+    
+    return;
 }	//End method: stop | void
 
 /***************************************************************************/
 //!	@brief public method
 //!	stop | Unit |
 /***************************************************************************/
-//!	@param unit
+//!	@param unit | Unit | result is given in this time unit
 //! @return void
 //! @details \n
-//!	Stop the timer. Snap the stop time
-//!	Return the elapsed time between stop and start in the given unit
+//! \n	Stop the timer. Snap the stop time
+//! \n	Return the elapsed time between stop and start in the given unit
 /***************************************************************************/
 
 int32_t Chrono::stop( Unit unit )
 {
-	//----------------------------------------------------------------
-	//	CHECK
-	//----------------------------------------------------------------
-	
-	//Get start time
-	uint64_t start_tmp = this -> g_systick_start;
-	//If: bad timestamp
-	if ((Config::PEDANTIC_CHECKS == true) && (start_tmp == Config::SYSTICK_INVALID))
-	{
-		return Config::TIME_INVALID; //FAIL
-	}
-	
-	//----------------------------------------------------------------
-	//	BODY
-	//----------------------------------------------------------------		
-	
-	//Snap the timestamp
-	uint64_t stop_tmp = get_timer_value();
-	//Record the stop timestamp inside the timer
-	this -> g_systick_stop = stop_tmp;
-	//Regular timer mode
-	this -> g_f_accumulator_mode = false;
+    //----------------------------------------------------------------
+    //	CHECK
+    //----------------------------------------------------------------
+    
+    //Get start time
+    uint64_t start_tmp = this -> g_systick_start;
+    //If: bad timestamp
+    if ((Config::PEDANTIC_CHECKS == true) && (start_tmp == Config::SYSTICK_INVALID))
+    {
+        return Config::TIME_INVALID; //FAIL
+    }
+    
+    //----------------------------------------------------------------
+    //	BODY
+    //----------------------------------------------------------------		
+    
+    //Snap the timestamp
+    uint64_t stop_tmp = get_timer_value();
+    //Record the stop timestamp inside the timer
+    this -> g_systick_stop = stop_tmp;
+    //Regular timer mode
+    this -> g_f_accumulator_mode = false;
 
-	//----------------------------------------------------------------
-	//	RETURN
-	//----------------------------------------------------------------
-	//return elapsed time
-	return this -> compute_elapsed( start_tmp, stop_tmp, unit );
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
+    //return elapsed time
+    return this -> compute_elapsed( start_tmp, stop_tmp, unit );
 }	//End method: stop | Unit |
 
 /***************************************************************************/
@@ -395,197 +395,200 @@ int32_t Chrono::stop( Unit unit )
 /***************************************************************************/
 //! @return unsigned int | frequency of the SysTick timer
 //! @details \n
-//! Snap the stop time
-//!	Accumulate the difference between stop and start inside the accumulator
-//! Swap the stop and start, invalidate the stop. Prepare for next cycle
-//! Use stop counter as accumulator
-//! If timer was in timer mode, reset the accumulator
+//! \n Snap the stop time
+//! \n	Accumulate the difference between stop and start inside the accumulator
+//! \n Swap the stop and start, invalidate the stop. Prepare for next cycle
+//! \n Use stop counter as accumulator
+//! \n If timer was in timer mode, reset the accumulator
 /***************************************************************************/
 
 bool Chrono::accumulate( void )
 {
-	//----------------------------------------------------------------
-	//	CHECK
-	//----------------------------------------------------------------
-	
-	//Get start time
-	uint64_t start_tmp = this -> g_systick_start;
-	//If: bad timestamp
-	if ((Config::PEDANTIC_CHECKS == true) && (start_tmp == Config::SYSTICK_INVALID))
-	{
-		return true; //FAIL
-	}
-	//Temp accumulator
-	uint64_t accumulator_tmp;
-	//if: Regular timer mode
-	if (this -> g_f_accumulator_mode == false)
-	{
-		//reset the accumulator
-		accumulator_tmp = 0;
-		//go into accumulator mode
-		this -> g_f_accumulator_mode = true;
-	}
-	//If: accumulator mode
-	else
-	{
-		//Fetch the current accumulator count
-		accumulator_tmp = this -> g_systick_stop;
-	}
+    //----------------------------------------------------------------
+    //	CHECK
+    //----------------------------------------------------------------
+    
+    //Get start time
+    uint64_t start_tmp = this -> g_systick_start;
+    //If: bad timestamp
+    if ((Config::PEDANTIC_CHECKS == true) && (start_tmp == Config::SYSTICK_INVALID))
+    {
+        return true; //FAIL
+    }
+    //Temp accumulator
+    uint64_t accumulator_tmp;
+    //if: Regular timer mode
+    if (this -> g_f_accumulator_mode == false)
+    {
+        //reset the accumulator
+        accumulator_tmp = 0;
+        //go into accumulator mode
+        this -> g_f_accumulator_mode = true;
+    }
+    //If: accumulator mode
+    else
+    {
+        //Fetch the current accumulator count
+        accumulator_tmp = this -> g_systick_stop;
+    }
 
-	//----------------------------------------------------------------
-	//	BODY
-	//----------------------------------------------------------------
+    //----------------------------------------------------------------
+    //	BODY
+    //----------------------------------------------------------------
 
-	//Snap the timestamp
-	uint64_t stop_tmp = get_timer_value();
-	//Record the stop timestamp inside the start timestamp and invalidate the stop timestamp
-	this -> g_systick_start = stop_tmp;
-	//Accumulate the DeltaT inside the accumulator at full resolution
-	accumulator_tmp += stop_tmp -start_tmp;
-	//Store the accumulator value
-	this -> g_systick_stop = accumulator_tmp;
+    //Snap the timestamp
+    uint64_t stop_tmp = get_timer_value();
+    //Record the stop timestamp inside the start timestamp and invalidate the stop timestamp
+    this -> g_systick_start = stop_tmp;
+    //Accumulate the DeltaT inside the accumulator at full resolution
+    accumulator_tmp += stop_tmp -start_tmp;
+    //Store the accumulator value
+    this -> g_systick_stop = accumulator_tmp;
 
-	//----------------------------------------------------------------
-	//	RETURN
-	//----------------------------------------------------------------
-	
-	return false; //OK
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
+    
+    return false; //OK
 }	//End public method: accumulate | void |
 
 /***************************************************************************/
 //!	@brief public method
 //!	accumulate | Unit unit |
 /***************************************************************************/
+//!	@param unit | Unit | result is given in this time unit
 //! @return unsigned int | frequency of the SysTick timer
 //! @details \n
-//! Snap the stop time
-//!	Accumulate the difference between stop and start inside the accumulator
-//! Swap the stop and start, invalidate the stop. Prepare for next cycle
+//! \n Snap the stop time
+//! \n	Accumulate the difference between stop and start inside the accumulator
+//! \n Swap the stop and start, invalidate the stop. Prepare for next cycle
 /***************************************************************************/
 
 int32_t Chrono::accumulate( Unit unit )
 {
-	//----------------------------------------------------------------
-	//	CHECK
-	//----------------------------------------------------------------
-	
-	//Get start time
-	uint64_t start_tmp = this -> g_systick_start;
-	//If: bad timestamp
-	if ((Config::PEDANTIC_CHECKS == true) && (start_tmp == Config::SYSTICK_INVALID))
-	{
-		return true; //FAIL
-	}
-	//Temp accumulator
-	uint64_t accumulator_tmp;
-	//if: Regular timer mode
-	if (this -> g_f_accumulator_mode == false)
-	{
-		//reset the accumulator
-		accumulator_tmp = 0;
-		//go into accumulator mode
-		this -> g_f_accumulator_mode = true;
-	}
-	//If: accumulator mode
-	else
-	{
-		//Fetch the current accumulator count
-		accumulator_tmp = this -> g_systick_stop;
-	}
+    //----------------------------------------------------------------
+    //	CHECK
+    //----------------------------------------------------------------
+    
+    //Get start time
+    uint64_t start_tmp = this -> g_systick_start;
+    //If: bad timestamp
+    if ((Config::PEDANTIC_CHECKS == true) && (start_tmp == Config::SYSTICK_INVALID))
+    {
+        return true; //FAIL
+    }
+    //Temp accumulator
+    uint64_t accumulator_tmp;
+    //if: Regular timer mode
+    if (this -> g_f_accumulator_mode == false)
+    {
+        //reset the accumulator
+        accumulator_tmp = 0;
+        //go into accumulator mode
+        this -> g_f_accumulator_mode = true;
+    }
+    //If: accumulator mode
+    else
+    {
+        //Fetch the current accumulator count
+        accumulator_tmp = this -> g_systick_stop;
+    }
 
-	//----------------------------------------------------------------
-	//	BODY
-	//----------------------------------------------------------------
+    //----------------------------------------------------------------
+    //	BODY
+    //----------------------------------------------------------------
 
-	//Snap the timestamp
-	uint64_t stop_tmp = get_timer_value();
-	//Record the stop timestamp inside the start timestamp and invalidate the stop timestamp
-	this -> g_systick_start = stop_tmp;
-	//Accumulate the DeltaT inside the accumulator at full resolution
-	accumulator_tmp += stop_tmp -start_tmp;
-	//Store the accumulator value
-	this -> g_systick_stop = accumulator_tmp;
+    //Snap the timestamp
+    uint64_t stop_tmp = get_timer_value();
+    //Record the stop timestamp inside the start timestamp and invalidate the stop timestamp
+    this -> g_systick_start = stop_tmp;
+    //Accumulate the DeltaT inside the accumulator at full resolution
+    accumulator_tmp += stop_tmp -start_tmp;
+    //Store the accumulator value
+    this -> g_systick_stop = accumulator_tmp;
 
-	//----------------------------------------------------------------
-	//	RETURN
-	//----------------------------------------------------------------
-	
-	return this -> compute_accumulator( accumulator_tmp, unit );
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
+    
+    return this -> compute_accumulator( accumulator_tmp, unit );
 }	//End public method: accumulate | void |
 
 /***************************************************************************/
 //!	@brief public getter
 //!	get_elapsed | Unit |
 /***************************************************************************/
-//! @return int | elapsed milliseconds. negative mean the timer was uninitialized
+//! @param unit | Unit | result is given in this time unit
+//! @return int | elapsed time. negative mean the timer was uninitialized
 //! @details \n
-//!	Time elapsed between start and stop
+//! \n	Time elapsed between start and stop
 /***************************************************************************/
 
 int32_t Chrono::get_elapsed( Unit unit )
 {
-	//----------------------------------------------------------------
-	//	VARS
-	//----------------------------------------------------------------
+    //----------------------------------------------------------------
+    //	VARS
+    //----------------------------------------------------------------
 
-	//Fetch timestamps
-	uint64_t start_tmp = this -> g_systick_start;
-	uint64_t stop_tmp = this -> g_systick_stop;
+    //Fetch timestamps
+    uint64_t start_tmp = this -> g_systick_start;
+    uint64_t stop_tmp = this -> g_systick_stop;
 
-	//----------------------------------------------------------------
-	//	CHECKS
-	//----------------------------------------------------------------
-	
-	//If: a timetamp is invalid
-	if ((start_tmp == Config::SYSTICK_INVALID) || (stop_tmp == Config::SYSTICK_INVALID))
-	{
-		return Config::TIME_INVALID;	//Invalid
-	}
-	//If: accumulator mode
-	if (this -> g_f_accumulator_mode == true)
-	{
-		return Config::TIME_INVALID;	//Invalid
-	}
+    //----------------------------------------------------------------
+    //	CHECKS
+    //----------------------------------------------------------------
+    
+    //If: a timetamp is invalid
+    if ((start_tmp == Config::SYSTICK_INVALID) || (stop_tmp == Config::SYSTICK_INVALID))
+    {
+        return Config::TIME_INVALID;	//Invalid
+    }
+    //If: accumulator mode
+    if (this -> g_f_accumulator_mode == true)
+    {
+        return Config::TIME_INVALID;	//Invalid
+    }
 
-	//----------------------------------------------------------------
-	//	RETURN
-	//----------------------------------------------------------------
-	//return elapsed time
-	return compute_elapsed( start_tmp, start_tmp, unit );
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
+    //return elapsed time
+    return compute_elapsed( start_tmp, start_tmp, unit );
 }	//End public getter: get_elapsed |  Unit |
 
 /***************************************************************************/
 //!	@brief public getter
 //!	get_accumulator | Unit |
 /***************************************************************************/
+//!	@param unit | Unit | result is given in this time unit
 //! @return int | accumulators. negative mean the timer was uninitialized
 //! @details \n
-//!	return the DeltaT accumulated by the accumulate function in the given time unit
+//! \n return the DeltaT accumulated by the accumulate function in the given time unit
 /***************************************************************************/
 
 inline int32_t Chrono::get_accumulator( Unit unit )
 {
-	//----------------------------------------------------------------
-	//	CHECK
-	//----------------------------------------------------------------
-	//If: accumulator mode
-	if (this -> g_f_accumulator_mode == false)
-	{
-		return Config::TIME_INVALID;	//Invalid
-	}
+    //----------------------------------------------------------------
+    //	CHECK
+    //----------------------------------------------------------------
+    //If: accumulator mode
+    if (this -> g_f_accumulator_mode == false)
+    {
+        return Config::TIME_INVALID;	//Invalid
+    }
 
-	//----------------------------------------------------------------
-	//	RETURN
-	//----------------------------------------------------------------
-	//return accumulated time
-	return this -> compute_accumulator( this -> g_systick_stop, unit );
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
+    //return accumulated time
+    return this -> compute_accumulator( this -> g_systick_stop, unit );
 }	//End public getter: get_elapsed |  Unit |
 
-	/*********************************************************************************************************************************************************
-	**********************************************************************************************************************************************************
-	**	PUBLIC STATIC METHOD
-	**********************************************************************************************************************************************************
-	*********************************************************************************************************************************************************/
+    /*********************************************************************************************************************************************************
+    **********************************************************************************************************************************************************
+    **	PUBLIC STATIC METHOD
+    **********************************************************************************************************************************************************
+    *********************************************************************************************************************************************************/
 
 /***************************************************************************/
 //!	@brief public static method
@@ -593,174 +596,181 @@ inline int32_t Chrono::get_accumulator( Unit unit )
 /***************************************************************************/
 //! @return unsigned int | frequency of the SysTick timer
 //! @details \n
-//!	The SysTick timer is tied to the CPU clock prescaled by four
+//! \n The SysTick timer is tied to the CPU clock prescaled by four
 /***************************************************************************/
 
 unsigned int Chrono::get_systick_freq( void )
 {
-	//----------------------------------------------------------------
-	//	RETURN
-	//----------------------------------------------------------------
-	
-	return SystemCoreClock /Config::SYSTICK_PRE;
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
+    
+    return SystemCoreClock /Config::SYSTICK_PRE;
 }	//End static method: get_systick_freq | void
 
 /***************************************************************************/
 //!	@brief public static method
 //!	delay | Unit | unsigned int |
 /***************************************************************************/
-//!	@param delay | unsigned int | how long to wait for in milliseconds
-//! @return void |
+//!	@param unit | Unit | timeunit of the delay
+//!	@param delay_tmp | unsigned int | how long to wait for
+//! @return bool | false = OK | true = fail
 //! @details \n
-//!	Use the SysTick timer counter to busy wait for the correct number of microseconds
-//!	The CPU SysTick timer is clocked by the ABH clock/4 = 27MHz
-//!	SystemCoreClock defines the frequency of the CPU in Hz
+//! \n	Use the SysTick timer counter to busy wait for the correct number of microseconds
+//! \n	The CPU SysTick timer is clocked by the ABH clock/4 = 27MHz
+//! \n	SystemCoreClock defines the frequency of the CPU in Hz
 /***************************************************************************/
 
 bool Chrono::delay( Unit unit, unsigned int delay_tmp )
 {
-	//----------------------------------------------------------------
-	//	VARS
-	//----------------------------------------------------------------
+    //----------------------------------------------------------------
+    //	VARS
+    //----------------------------------------------------------------
 
-	//Temp timestamp
-	uint64_t systick_tmp;
-	//Compute final timestamp
-	uint64_t systick_stop;
-	//Ticks required to count 1mS
-	uint32_t numticks = compute_tick_per_time_unit( unit );
-	//If: bad unit
-	if (numticks == 0)
-	{
-		return true; //fail
-	}
+    //Temp timestamp
+    uint64_t systick_tmp;
+    //Compute final timestamp
+    uint64_t systick_stop;
+    //Ticks required to count 1mS
+    uint32_t numticks = compute_tick_per_time_unit( unit );
+    //If: bad unit
+    if (numticks == 0)
+    {
+        return true; //fail
+    }
 
-	//----------------------------------------------------------------
-	//	BODY
-	//----------------------------------------------------------------
-	//	Wait for the correct number of ticks
+    //----------------------------------------------------------------
+    //	BODY
+    //----------------------------------------------------------------
+    //	Wait for the correct number of ticks
 
-	//Snap start
-	systick_stop = get_timer_value();
-	//Compute stop time. 
-	systick_stop += numticks *delay_tmp;
-	//Wait an additional tick for current tick
-	systick_stop++;
-	//Busy wait for time to pass
-	do
-	{
-		//Snap timestamp
-		systick_tmp = get_timer_value();
-	}
-	while( systick_tmp < systick_stop );
+    //Snap start
+    systick_stop = get_timer_value();
+    //Compute stop time. 
+    systick_stop += numticks *delay_tmp;
+    //Wait an additional tick for current tick
+    systick_stop++;
+    //Busy wait for time to pass
+    do
+    {
+        //Snap timestamp
+        systick_tmp = get_timer_value();
+    }
+    while( systick_tmp < systick_stop );
 
-	//----------------------------------------------------------------
-	//	RETURN
-	//----------------------------------------------------------------
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
 
-	return false; //OK
+    return false; //OK
 }	//End public static method: delay | Unit | unsigned int |
 
-	/*********************************************************************************************************************************************************
-	**********************************************************************************************************************************************************
-	**	PRIVATE METHODS
-	**********************************************************************************************************************************************************
-	*********************************************************************************************************************************************************/
+    /*********************************************************************************************************************************************************
+    **********************************************************************************************************************************************************
+    **	PRIVATE METHODS
+    **********************************************************************************************************************************************************
+    *********************************************************************************************************************************************************/
 
 /***************************************************************************/
 //!	@brief private method
 //!	compute_tick_per_time_unit | Unit |
 /***************************************************************************/
+//! @param unit | Unit | result is given in this time unit
 //! @return uint32_t | number of systick counts needed to count one time unit
 //! @details
-//!	Compute the number of systick counts needed to count one time unit
+//!	\n Compute the number of systick counts needed to count one time unit
 /***************************************************************************/
 
 inline uint32_t Chrono::compute_tick_per_time_unit( Unit unit )
 {
-	//----------------------------------------------------------------
-	//	BODY
-	//----------------------------------------------------------------
-	//	Compute del
+    //----------------------------------------------------------------
+    //	BODY
+    //----------------------------------------------------------------
+    //	Compute del
 
-	//Switch: Time unit
-	switch( unit )
-	{
-		case Unit::milliseconds:
-		{
-			return SystemCoreClock /1000 /Config::SYSTICK_PRE;
-			break;
-		}
-		case Unit::microseconds:
-		{
-			return SystemCoreClock /1000000 /Config::SYSTICK_PRE;
-			break;
-		}
-		//Unhandled time unit
-		default:
-		{
-			return 0;   //Invalid number of systick counts. Using it will yield infinite time
-		}
-	};	//End switch: Time unit
+    //Switch: Time unit
+    switch( unit )
+    {
+        case Unit::milliseconds:
+        {
+            return SystemCoreClock /1000 /Config::SYSTICK_PRE;
+            break;
+        }
+        case Unit::microseconds:
+        {
+            return SystemCoreClock /1000000 /Config::SYSTICK_PRE;
+            break;
+        }
+        //Unhandled time unit
+        default:
+        {
+            return 0;   //Invalid number of systick counts. Using it will yield infinite time
+        }
+    };	//End switch: Time unit
 
-	//----------------------------------------------------------------
-	//	RETURN
-	//----------------------------------------------------------------
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
 
-	return 0;   //Invalid number of systick counts. Using it will yield infinite time
+    return 0;   //Invalid number of systick counts. Using it will yield infinite time
 }	//End private method: compute_tick_per_time_unit | Unit |
 
 /***************************************************************************/
 //!	@brief private method
 //!	compute_elapsed | uint64_t | uint64_t | Unit |
 /***************************************************************************/
+//! @param start | uint64_t | timestamp
+//! @param stop | uint64_t | timestamp
+//! @param unit | Unit | result is given in this time unit
 //! @return int32_t | negative = invalid | zero or positive = elapsed time in the given time unit
 //! @details \n
-//!	use start and stop timestamp to compute the elapsed time in a given time unit
+//!	\n use start and stop timestamp to compute the elapsed time in a given time unit
 /***************************************************************************/
 
 inline int32_t Chrono::compute_elapsed( uint64_t start, uint64_t stop, Unit unit )
 {
-	//----------------------------------------------------------------
-	//	VARS
-	//----------------------------------------------------------------
+    //----------------------------------------------------------------
+    //	VARS
+    //----------------------------------------------------------------
 
-	//If: causality violation
-	if ((Config::PEDANTIC_CHECKS == true) && (start > stop))
-	{
-		//Hopefully the timestamps are wrong and the universe still works as intended
-		return Config::TIME_INVALID; //FAIL
-	}
-	
-	//----------------------------------------------------------------
-	//	BODY
-	//----------------------------------------------------------------		
-	
-	//SysTick counts in one time unit
-	uint32_t numticks_time_unit = this -> compute_tick_per_time_unit( unit );
-	//If: bad unit was provided
-	if ((Config::PEDANTIC_CHECKS == true) && (numticks_time_unit == 0))
-	{
-		return TIME_INVALID;
-	}
-	//Compute DeltaT in system ticks as stop-start
-	uint64_t deltat = stop -start;
-	//Compute DeltaT in time units
-	deltat /= numticks_time_unit;
-	//Demote
-	int32_t ret = deltat;
+    //If: causality violation
+    if ((Config::PEDANTIC_CHECKS == true) && (start > stop))
+    {
+        //Hopefully the timestamps are wrong and the universe still works as intended
+        return Config::TIME_INVALID; //FAIL
+    }
+    
+    //----------------------------------------------------------------
+    //	BODY
+    //----------------------------------------------------------------		
+    
+    //SysTick counts in one time unit
+    uint32_t numticks_time_unit = this -> compute_tick_per_time_unit( unit );
+    //If: bad unit was provided
+    if ((Config::PEDANTIC_CHECKS == true) && (numticks_time_unit == 0))
+    {
+        return TIME_INVALID;
+    }
+    //Compute DeltaT in system ticks as stop-start
+    uint64_t deltat = stop -start;
+    //Compute DeltaT in time units
+    deltat /= numticks_time_unit;
+    //Demote
+    int32_t ret = deltat;
 
-	//----------------------------------------------------------------
-	//	RETURN
-	//----------------------------------------------------------------
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
 
-	return ret;
+    return ret;
 }	//End private method: compute_elapsed | uint64_t | uint64_t | Unit |
 
 /***************************************************************************/
 //!	@brief private method
 //!	compute_accumulator | uint64_t | Unit |
 /***************************************************************************/
+//! @param accumulator | uint64_t | timestamp DeltaT
+//! @param unit | Unit | result is given in this time unit
 //! @return int32_t | negative = invalid | zero or positive = elapsed time in the given time unit
 //! @details \n
 //!	use start and stop timestamp to compute the elapsed time in a given time unit
@@ -768,37 +778,37 @@ inline int32_t Chrono::compute_elapsed( uint64_t start, uint64_t stop, Unit unit
 
 int32_t Chrono::compute_accumulator( uint64_t accumulator, Unit unit )
 {
-	//----------------------------------------------------------------
-	//	VARS
-	//----------------------------------------------------------------
+    //----------------------------------------------------------------
+    //	VARS
+    //----------------------------------------------------------------
 
-	//If: accumulator
-	if ((Config::PEDANTIC_CHECKS == true) && (accumulator == Config::SYSTICK_INVALID))
-	{
-		return TIME_INVALID;
-	}
-	
-	//----------------------------------------------------------------
-	//	BODY
-	//----------------------------------------------------------------		
-	
-	//SysTick counts in one time unit
-	uint32_t numticks_time_unit = this -> compute_tick_per_time_unit( unit );
-	//If: bad unit was provided
-	if ((Config::PEDANTIC_CHECKS == true) && (numticks_time_unit == 0))
-	{
-		return TIME_INVALID;
-	}
-	//Compute DeltaT in time units
-	accumulator /= numticks_time_unit;
-	//Demote
-	int32_t ret = accumulator;
+    //If: accumulator
+    if ((Config::PEDANTIC_CHECKS == true) && (accumulator == Config::SYSTICK_INVALID))
+    {
+        return TIME_INVALID;
+    }
+    
+    //----------------------------------------------------------------
+    //	BODY
+    //----------------------------------------------------------------		
+    
+    //SysTick counts in one time unit
+    uint32_t numticks_time_unit = this -> compute_tick_per_time_unit( unit );
+    //If: bad unit was provided
+    if ((Config::PEDANTIC_CHECKS == true) && (numticks_time_unit == 0))
+    {
+        return TIME_INVALID;
+    }
+    //Compute DeltaT in time units
+    accumulator /= numticks_time_unit;
+    //Demote
+    int32_t ret = accumulator;
 
-	//----------------------------------------------------------------
-	//	RETURN
-	//----------------------------------------------------------------
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
 
-	return ret;
+    return ret;
 }	//End private method: compute_accumulator | uint64_t | Unit |
 
 /**********************************************************************************

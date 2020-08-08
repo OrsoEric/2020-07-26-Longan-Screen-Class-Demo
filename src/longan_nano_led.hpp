@@ -80,14 +80,12 @@ namespace Longan_nano
 /************************************************************************************/
 //!	@author		Orso Eric
 //! @version	2020-07-15
-//! @date		2020-07-15
 //! @brief		Leds
 //! @copyright	BSD 3-Clause License Copyright (c) 2020, Orso Eric
-//! @todo		todo list
 //! @details
-//!	Class to control the LEDs on the Longan Nano board
-//! Experiment with scoping of enum and typedef
-//! Can do better...
+//!	\n Class to control the LEDs on the Longan Nano board
+//! \n Experiment with scoping of enum and typedef
+//! \n Can do better...
 /************************************************************************************/
 
 class Leds
@@ -99,6 +97,7 @@ class Leds
         //--------------------------------------------------------------------------
         //	Scope enums inside class in order to encapsulate them where they logically belong
 
+        //! @brief Color of the LEDs
         typedef enum _Color
         {
             BLACK,
@@ -108,6 +107,7 @@ class Leds
             WHITE
         } Color;
 
+        //! @brief  GPIO used by the LEDs
         typedef enum _Led_gpio
         {
             RED_GPIO = GPIOC,
@@ -115,6 +115,7 @@ class Leds
             BLUE_GPIO = GPIOA,
         } Led_gpio;
 
+        //! @brief  pins used by the LEDs
         typedef enum _Led_pin
         {
             RED_PIN = GPIO_PIN_13,
@@ -194,7 +195,7 @@ class Leds
         //!	@brief public static method
         //!	set_color | Led_color
         /***************************************************************************/
-        //!	@param Led_color | color of the LED
+        //!	@param color | Color | color of the LED
         //! @return bool | false = OK | true = ERR
         //! @details
         //!	initialize the longan nano GPIO LEDs

@@ -76,7 +76,7 @@ namespace Longan_nano
 //! @class 		Display
 /************************************************************************************/
 //!	@author		Orso Eric
-//! @version	2020-07-22
+//! @version	2020-08-08
 //! @brief		Longan Nano Display Driver
 //! @copyright	BSD 3-Clause License (c) 2019-2020, Samuli Laine
 //! @copyright	BSD 3-Clause License (c) 2020, Orso Eric
@@ -112,6 +112,12 @@ namespace Longan_nano
 //!	\n Refactor all calls to use configuration enum for the hardware peripherals
 //!	\n 	2020-07-24
 //!	\n Fixed color conversion function
+//!	\n      2020-08-06
+//!	\n  Massive update of style
+//!	\n  Refactor functions, especially initialization
+//!	\n  Full support for USE_DMA=false. screen updates much slower at the same CPU use
+//! \n      2020-08-07
+//! \n  Bugfix: Solid color draw was bugged
 /************************************************************************************/
 
 class Display
@@ -120,51 +126,12 @@ class Display
     public:
         /*********************************************************************************************************************************************************
         **********************************************************************************************************************************************************
-        **	PUBLIC ENUM
-        **********************************************************************************************************************************************************
-        *********************************************************************************************************************************************************/
-        
-        //Configuration parameters of the LCD display
-        typedef enum _Config
-        {
-            //Screen physical configuration
-            WIDTH				= 160,				//WIdth of the LCD display
-            HEIGHT				= 80,				//Height of the LCD display
-            PIXEL_COUNT			= WIDTH *HEIGHT,	//Number of pixels
-            COLOR_DEPTH			= 16,				//Color depth. Screen allows 12, 16 and 18
-            ROW_ADDRESS_OFFSET	= 1,				//Offset to be applied to the row address (physical pixels do not begin in 0,0)
-            COL_ADDRESS_OFFSET	= 26,				//Offset to be applied to the col address (physical pixels do not begin in 0,0)
-            //Screen GPIO Configuration
-            RS_GPIO			= GPIOB,			//RS pin of the LCD
-            RS_PIN			= GPIO_PIN_0,		//RS pin of the LCD
-            RST_GPIO		= GPIOB,			//Reset pin of the LCD
-            RST_PIN			= GPIO_PIN_1,		//Reset pin of the LCD
-            //SPI Configuration
-            SPI_CH			= SPI0,				//SPI used for the ST7735S
-            SPI_CS_GPIO		= GPIOB,			//SPI Chip Select pin of the LCD
-            SPI_CS_PIN		= GPIO_PIN_2,		//SPI Chip Select pin of the LCD
-            SPI_CLK_GPIO	= GPIOA,			//SPI Clock pin of the LCD
-            SPI_CLK_PIN		= GPIO_PIN_5,		//SPI Clock pin of the LCD
-            SPI_MISO_GPIO	= GPIOA,			//SPI MISO In pin of the LCD
-            SPI_MISO_PIN	= GPIO_PIN_6,		//SPI MISO In pin of the LCD
-            SPI_MOSI_GPIO	= GPIOA,			//SPI MOSI In pin of the LCD
-            SPI_MOSI_PIN	= GPIO_PIN_7,		//SPI MOSI In pin of the LCD
-            //DMA Configuration
-            USE_DMA         = true,             //Use DMA acceleration
-            DMA_SPI_TX      = DMA0,             //DMA pheriperal used for the SPI transmit
-            DMA_SPI_TX_CH   = (dma_channel_enum)DMA_CH2,          //DMA channel used for the SPI transmit
-            //DMA_SPI_RX      = DMA0,             //DMA pheriperal used for the SPI receive
-            //DMA_SPI_RX_CH   = (dma_channel_enum)DMA_CH1,          //DMA channel used for the SPI receive
-        } Config;
-
-        /*********************************************************************************************************************************************************
-        **********************************************************************************************************************************************************
         **	CONSTRUCTORS
         **********************************************************************************************************************************************************
         *********************************************************************************************************************************************************/
 
         //Empty Constructor
-		Display( void );
+        Display( void );
         
         /*********************************************************************************************************************************************************
         **********************************************************************************************************************************************************
@@ -172,7 +139,7 @@ class Display
         **********************************************************************************************************************************************************
         *********************************************************************************************************************************************************/
 
-		//Empty Destructor
+        //Empty Destructor
         ~Display( void );
 
         /*********************************************************************************************************************************************************
@@ -190,36 +157,63 @@ class Display
         **********************************************************************************************************************************************************
         *********************************************************************************************************************************************************/
 
-		//convert from 24b 8R8G8B space to 16bit 5R6G5B space
+        //convert from 24b 8R8G8B space to 16bit 5R6G5B space
         static uint16_t color( uint8_t r, uint8_t g, uint8_t b );
         //Register a sprite for the driver to draw. Complex pixel map.
         int register_sprite( int origin_h, int origin_w, int size_h, int size_w, uint16_t* sprite_ptr );
         //Register a sprite for the driver to draw. Solid color.
         int register_sprite( int origin_h, int origin_w, int size_h, int size_w, uint16_t sprite_color );
-		//Core method. FSM that physically updates the screen. Return: false = IDLE | true = BUSY
+        //Core method. FSM that physically updates the screen. Return: false = IDLE | true = BUSY
         bool update_sprite( void );
-		//Draw a sprite. Complex color map. Blocking Method.
+        //Draw a sprite. Complex color map. Blocking Method.
         int draw_sprite( int origin_h, int origin_w, int size_h, int size_w, uint16_t* sprite_ptr );
-		//Draw a sprite. Solid color. Blocking Method.
+        //Draw a sprite. Solid color. Blocking Method.
         int draw_sprite( int origin_h, int origin_w, int size_h, int size_w, uint16_t sprite_color );
-		//Clear the screen to black. Blocking method.
+        //Clear the screen to black. Blocking method.
         int clear( void );
-		//Clear the screen to a given color. Blocking method.
+        //Clear the screen to a given color. Blocking method.
         int clear( uint16_t color );
-       
+    
     protected:
         /*********************************************************************************************************************************************************
         **********************************************************************************************************************************************************
-        **	PROTECTED METHODS
+        **	PROTECTED ENUM
         **********************************************************************************************************************************************************
         *********************************************************************************************************************************************************/
-
-        /*********************************************************************************************************************************************************
-        **********************************************************************************************************************************************************
-        **	PROTECTED VARS
-        **********************************************************************************************************************************************************
-        *********************************************************************************************************************************************************/
-
+        
+        //! @brief Configuration parameters of the LCD Display class
+        typedef enum _Config
+        {
+            //Screen physical configuration
+            WIDTH				= 160,				//WIdth of the LCD display
+            HEIGHT				= 80,				//Height of the LCD display
+            PIXEL_COUNT			= WIDTH *HEIGHT,	//Number of pixels
+            COLOR_DEPTH			= 16,				//Color depth. Screen allows 12, 16 and 18
+            ROW_ADDRESS_OFFSET	= 1,				//Offset to be applied to the row address (physical pixels do not begin in 0,0)
+            COL_ADDRESS_OFFSET	= 26,				//Offset to be applied to the col address (physical pixels do not begin in 0,0)
+            //Screen GPIO Configuration
+            RS_GPIO			= GPIOB,			//RS pin of the LCD
+            RS_PIN			= GPIO_PIN_0,		//RS pin of the LCD
+            RST_GPIO		= GPIOB,			//Reset pin of the LCD
+            RST_PIN			= GPIO_PIN_1,		//Reset pin of the LCD
+            RESET_DELAY     = 1,                //TIme needed for the reset to take effect in milliseconds
+            //SPI Configuration
+            SPI_CH			= SPI0,				//SPI used for the ST7735S
+            SPI_CS_GPIO		= GPIOB,			//SPI Chip Select pin of the LCD
+            SPI_CS_PIN		= GPIO_PIN_2,		//SPI Chip Select pin of the LCD
+            SPI_CLK_GPIO	= GPIOA,			//SPI Clock pin of the LCD
+            SPI_CLK_PIN		= GPIO_PIN_5,		//SPI Clock pin of the LCD
+            SPI_MISO_GPIO	= GPIOA,			//SPI MISO In pin of the LCD
+            SPI_MISO_PIN	= GPIO_PIN_6,		//SPI MISO In pin of the LCD
+            SPI_MOSI_GPIO	= GPIOA,			//SPI MOSI In pin of the LCD
+            SPI_MOSI_PIN	= GPIO_PIN_7,		//SPI MOSI In pin of the LCD
+            //DMA Configuration
+            USE_DMA         = true,            	//With DMA acceleration disabled, CPU use is the same, but the screen takes a lot longer to refresh as there are 74 update/sprite instead of 8 update/sprite
+            DMA_SPI_TX      = DMA0,             //DMA pheriperal used for the SPI transmit
+            DMA_SPI_TX_CH   = (dma_channel_enum)DMA_CH2,          //DMA channel used for the SPI transmit
+            //DMA_SPI_RX      = DMA0,             //DMA pheriperal used for the SPI receive
+            //DMA_SPI_RX_CH   = (dma_channel_enum)DMA_CH1,          //DMA channel used for the SPI receive
+        } Config;
 
     private:
         /*********************************************************************************************************************************************************
@@ -228,9 +222,50 @@ class Display
         **********************************************************************************************************************************************************
         *********************************************************************************************************************************************************/
         
-        //ST7735S Commands
+        //! @brief ST7735S Commands
         typedef enum _Command
-        {
+        {           
+            //  SETUP_NORMAL_MODE
+            //Frame rate=850kHz/((RTNA x 2 + 40) x (LINE + FPA + BPA +2))
+            //Frame Rate = 850Khz/( (5*2+40)*(80+56+56+2) )= 87.6[Hz]
+            //RTNA | FPA | BPA
+            SETUP_NORMAL_MODE           = 0xB1,
+            //  SETUP_IDLE_MODE
+            //Frame rate=850kHz/((RTNA x 2 + 40) x (LINE + FPA + BPA +2))
+            //Frame Rate = 850Khz/( (5*2+40)*(80+56+56+2) )= 87.6[Hz]
+            //RTNA | FPA | BPA
+            SETUP_IDLE_MODE             = 0xB2,
+
+            SETUP_PARTIAL_MODE          = 0xB3,
+            //  DISPLAY_INVERSION_CONTROL
+            //false  Dot Inversion | true = Normal Mode Column Inversion
+            //Bit 0	| Normal Mode
+            //Bit 1	| idle Mode
+            //Bit 2 | partial mode/full colors
+            DISPLAY_INVERSION_CONTROL   = 0xB4, 
+
+            POWER_GVDD                  = 0xC0,
+            POWER_VGH_VGL               = 0xC1,
+            POWER_VCOM1                 = 0xC5,
+
+            POWER_MODE_NORMAL           = 0xC2,
+            POWER_MODE_IDLE             = 0xC3,
+            POWER_MODE_PARTIAL          = 0xC4,
+
+            ADJUST_GAMMA_PLUS           = 0xE0,
+            ADJUST_GAMMA_MINUS          = 0xE1,
+            
+            //  COLOR_FORMAT
+            //0x03	|	12b |4R4G|4B...4R|4G4B| 3 bytes transfer 2 color
+            //0x05	|	16b |5R3G|3G5B|			2 bytes transfer 1 color
+            //0x06	|	18b |6R..|6G..|6b..|	3 bytes transfer 1 color
+            COLOR_FORMAT                = 0x3A,
+
+            MEMORY_DATA_ACCESS_CONTROL  = 0x36,
+
+            DISPLAY_ON                  = 0x29,
+            SLEEP_OUT_BOOSTER_ON        = 0x11,
+
             ENABLE_DISPLAY_INVERSION	= 0x21,
             SEND_ROW_ADDRESS 			= 0x2A,		//Column address (ST7735S datasheet page 128/201)
             SEND_COL_ADDRESS 			= 0x2B,		//Row Address (ST7735S datasheet page 131/201)
@@ -244,7 +279,7 @@ class Display
         **********************************************************************************************************************************************************
         *********************************************************************************************************************************************************/
         
-        //Sprite informations
+        //! @brief Sprite informations
         typedef struct _Sprite
         {
             //origin pixel of the sprite on the screen
@@ -272,8 +307,14 @@ class Display
         **********************************************************************************************************************************************************
         *********************************************************************************************************************************************************/
 
-		//initialize GPIO configuration
-        void init_gpio( void );
+        //initialize GPIO configuration
+        bool init_gpio( void );
+        //Initialize SPI that communicates with the screen
+        bool init_spi( void );
+        //Initialize DMA that accelerates the SPI. Skipped if Config::USE_DMA is set to false
+        bool init_dma( void );
+        //Send ST7735 init sequence
+        bool init_st7735( void );
         
         /*********************************************************************************************************************************************************
         **********************************************************************************************************************************************************
@@ -283,17 +324,19 @@ class Display
 
         //return true when the SPI is IDLE
         bool is_spi_idle( void );
-		//wait until SPI is idle. Blocking function.
-		void spi_wait_idle( void );
-		//wait until SPI is dont TX. Blocking function.
+        //Return true when the SPI is done TX
+        bool is_spi_done_tx( void );
+        //wait until SPI is idle. Blocking function.
+        void spi_wait_idle( void );
+        //wait until SPI is dont TX. Blocking function.
         void spi_wait_tbe( void );
-		//select display
+        //select display
         void cs_active( void );
-		//de-select display
+        //de-select display
         void cs_inactive( void );
-		//Display in command mode
+        //Display in command mode
         void rs_mode_cmd( void );
-		//Display in data mode
+        //Display in data mode
         void rs_mode_data( void );
         //Reset the display
         void rst_active( void );
@@ -301,8 +344,12 @@ class Display
         void rst_inactive( void );		
         //Configure the SPI to 8b
         void spi_set_8bit( void );
-		//Configure the SPI to 16b
+        //Configure the SPI to 16b
         void spi_set_16bit( void );
+        //Use the DMA to send a 16b memory through the SPI
+        void dma_send_map16( uint16_t *data_ptr, uint16_t data_size );
+        //Use the DMA to send a 16b data through the SPI a number of times
+        void dma_send_solid16( uint16_t *data_ptr, uint16_t data_size );
 
         /*********************************************************************************************************************************************************
         **********************************************************************************************************************************************************
@@ -310,79 +357,77 @@ class Display
         **********************************************************************************************************************************************************
         *********************************************************************************************************************************************************/
 
-        //ST7735S initialization sequence. Stored in flash memory
+        //! @brief ST7735S initialization sequence. Stored in flash memory
         static constexpr uint8_t g_st7735s_init_sequence[] =
         {
-            Command::ENABLE_DISPLAY_INVERSION, Command::TERMINATOR,
-            0xb1, 0x05, 0x3a, 0x3a, Command::TERMINATOR,
-            0xb2, 0x05, 0x3a, 0x3a, Command::TERMINATOR,
-            0xb3, 0x05, 0x3a, 0x3a, 0x05, 0x3a, 0x3a, Command::TERMINATOR,
-            0xb4, 0x03, Command::TERMINATOR,
-            0xc0, 0x62, 0x02, 0x04, Command::TERMINATOR,
-            0xc1, 0xc0, Command::TERMINATOR,
-            0xc2, 0x0d, 0x00, Command::TERMINATOR,
-            0xc3, 0x8d, 0x6a, Command::TERMINATOR,
-            0xc4, 0x8d, 0xee, Command::TERMINATOR,
-            0xc5, 0x0e, Command::TERMINATOR,
-            0xe0, 0x10, 0x0e, 0x02, 0x03, 0x0e, 0x07, 0x02, 0x07, 0x0a, 0x12, 0x27, 0x37, 0x00, 0x0d, 0x0e, 0x10, Command::TERMINATOR,
-            0xe1, 0x10, 0x0e, 0x03, 0x03, 0x0f, 0x06, 0x02, 0x08, 0x0a, 0x13, 0x26, 0x36, 0x00, 0x0d, 0x0e, 0x10, Command::TERMINATOR,
-            0x3a, 0x55, Command::TERMINATOR,
-            0x36, 0x78, Command::TERMINATOR,
-            0x29, Command::TERMINATOR,
-            0x11, Command::TERMINATOR,
+            Command::ENABLE_DISPLAY_INVERSION,      Command::TERMINATOR,
+            Command::SETUP_NORMAL_MODE,             0x05, 0x3a, 0x3a, Command::TERMINATOR,
+            Command::SETUP_IDLE_MODE,               0x05, 0x3a, 0x3a, Command::TERMINATOR,
+            Command::SETUP_PARTIAL_MODE,            0x05, 0x3a, 0x3a, 0x05, 0x3a, 0x3a, Command::TERMINATOR,
+            Command::DISPLAY_INVERSION_CONTROL,     0x03, Command::TERMINATOR,
+            Command::POWER_GVDD,                    0x62, 0x02, 0x04, Command::TERMINATOR,
+            Command::POWER_VGH_VGL,                 0xc0, Command::TERMINATOR,
+            Command::POWER_MODE_NORMAL,             0x0d, 0x00, Command::TERMINATOR,
+            Command::POWER_MODE_IDLE,               0x8d, 0x6a, Command::TERMINATOR,
+            Command::POWER_MODE_PARTIAL,            0x8d, 0xee, Command::TERMINATOR,
+            Command::POWER_VCOM1,                   0x0e, Command::TERMINATOR,
+            Command::ADJUST_GAMMA_PLUS,             0x10, 0x0e, 0x02, 0x03, 0x0e, 0x07, 0x02, 0x07, 0x0a, 0x12, 0x27, 0x37, 0x00, 0x0d, 0x0e, 0x10, Command::TERMINATOR,
+            Command::ADJUST_GAMMA_MINUS,            0x10, 0x0e, 0x03, 0x03, 0x0f, 0x06, 0x02, 0x08, 0x0a, 0x13, 0x26, 0x36, 0x00, 0x0d, 0x0e, 0x10, Command::TERMINATOR,
+            Command::COLOR_FORMAT,                  0x55, Command::TERMINATOR,
+            Command::MEMORY_DATA_ACCESS_CONTROL,    0x78, Command::TERMINATOR,
+            Command::DISPLAY_ON,                    Command::TERMINATOR,
+            Command::SLEEP_OUT_BOOSTER_ON,          Command::TERMINATOR,
             Command::TERMINATOR,
         };
-        //Sprite
+        //! @brief Runtime sprite informations
         Sprite g_sprite;
-        //Buffer to send address data using DMA
+        //! @brief Buffer to send address data using DMA
         uint16_t g_address_buffer[2];
-        //FSM status
-        uint8_t g_sprite_status;
-        //Record errors | false = OK | true = ERR |
-        //bool g_err;
+        //! @brief FSM status
+        uint32_t g_sprite_status;
 
     //--------------------------------------------------------------------------
     //	End Private
     //--------------------------------------------------------------------------
 };	//End class: Lcd
 
-	/*********************************************************************************************************************************************************
-	**********************************************************************************************************************************************************
-	**	CONSTRUCTORS
-	**********************************************************************************************************************************************************
-	*********************************************************************************************************************************************************/
+    /*********************************************************************************************************************************************************
+    **********************************************************************************************************************************************************
+    **	CONSTRUCTORS
+    **********************************************************************************************************************************************************
+    *********************************************************************************************************************************************************/
 
 /***************************************************************************/
 //!	@brief constructor
 //!	Display | void |
 /***************************************************************************/
 //! @details
-//!	initialize display class
-//! will NOT initialize the peripherals
+//!	\n	initialize display class
+//!	\n will NOT initialize the peripherals
 /***************************************************************************/
 
 Display::Display( void )
 {
-	//----------------------------------------------------------------
-	//	BODY
-	//----------------------------------------------------------------
-	//Initialize class vars
-	
-	//FSM to idle
-	this -> g_sprite_status = 0;
+    //----------------------------------------------------------------
+    //	BODY
+    //----------------------------------------------------------------
+    //Initialize class vars
+    
+    //FSM to idle
+    this -> g_sprite_status = 0;
 
-	//----------------------------------------------------------------
-	//	RETURN
-	//----------------------------------------------------------------
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
 
-	return;
+    return;
 }	//End Constructor: Display | void |
 
-	/*********************************************************************************************************************************************************
-	**********************************************************************************************************************************************************
-	**	DESTRUCTORS
-	**********************************************************************************************************************************************************
-	*********************************************************************************************************************************************************/
+    /*********************************************************************************************************************************************************
+    **********************************************************************************************************************************************************
+    **	DESTRUCTORS
+    **********************************************************************************************************************************************************
+    *********************************************************************************************************************************************************/
 
 /***************************************************************************/
 //!	@brief destructor
@@ -391,19 +436,19 @@ Display::Display( void )
 
 Display::~Display( void )
 {
-	
-	//----------------------------------------------------------------
-	//	RETURN
-	//----------------------------------------------------------------
+    
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
 
-	return;
+    return;
 }	//End Destructor: ~Display | void |
 
-	/*********************************************************************************************************************************************************
-	**********************************************************************************************************************************************************
-	**	PUBLIC INIT
-	**********************************************************************************************************************************************************
-	*********************************************************************************************************************************************************/
+    /*********************************************************************************************************************************************************
+    **********************************************************************************************************************************************************
+    **	PUBLIC INIT
+    **********************************************************************************************************************************************************
+    *********************************************************************************************************************************************************/
 
 /***************************************************************************/
 //!	@brief Public init
@@ -411,186 +456,166 @@ Display::~Display( void )
 /***************************************************************************/
 //! @return bool | false = OK | true = ERR
 //! @details
-//!	initialize the longan nano display and related peripherals
+//!	\n initialize the longan nano display and related peripherals
 /***************************************************************************/
 
 bool Display::init( void )
 {
-	//----------------------------------------------------------------
-	//	BODY
-	//----------------------------------------------------------------
-	
-	rcu_periph_clock_enable( RCU_GPIOA );
-	rcu_periph_clock_enable( RCU_GPIOB );
-	rcu_periph_clock_enable( RCU_AF );
-	rcu_periph_clock_enable( RCU_DMA0 );
-	rcu_periph_clock_enable( RCU_SPI0 );
+    //----------------------------------------------------------------
+    //	VARS
+    //----------------------------------------------------------------
 
-	gpio_init(GPIOA, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_5 | GPIO_PIN_7);
-	gpio_init(GPIOB, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2);
-	
-	this -> rs_mode_data();
-	this -> rst_active();	
-	this -> cs_inactive();
+    //Retun flag
+    bool f_ret = false;
 
-	Longan_nano::Chrono::delay( Longan_nano::Chrono::Unit::milliseconds, 1 );
-	this -> rst_inactive();
-	
-	Longan_nano::Chrono::delay( Longan_nano::Chrono::Unit::milliseconds, 5 );
+    //----------------------------------------------------------------
+    //	BODY
+    //----------------------------------------------------------------
+    
+    //Initialize GPIO configuration
+    f_ret |= this -> init_gpio();
 
-	// Deinit SPI and DMA.
-	spi_i2s_deinit(Config::SPI_CH);
-	dma_deinit(DMA0, DMA_CH1);
-	dma_deinit(DMA0, DMA_CH2);
+    //Reset the ST7735 display
+    this -> rs_mode_data();
+    this -> rst_active();	
+    this -> cs_inactive();
+    Longan_nano::Chrono::delay( Longan_nano::Chrono::Unit::milliseconds, Config::RESET_DELAY );
 
-	// Configure DMA, do not enable.
-	DMA_CHCTL(DMA0, DMA_CH1) = (uint32_t)(DMA_PRIORITY_ULTRA_HIGH | DMA_CHXCTL_MNAGA);  // Receive.
-	DMA_CHCTL(DMA0, DMA_CH2) = (uint32_t)(DMA_PRIORITY_ULTRA_HIGH | DMA_CHXCTL_DIR);    // Transmit.
-	DMA_CHPADDR(DMA0, DMA_CH1) = (uint32_t)&SPI_DATA(Config::SPI_CH);
-	DMA_CHPADDR(DMA0, DMA_CH2) = (uint32_t)&SPI_DATA(Config::SPI_CH);
+    //Activate the ST7735 display
+    this -> rst_inactive();
+    Longan_nano::Chrono::delay( Longan_nano::Chrono::Unit::milliseconds, Config::RESET_DELAY );
 
-	// Configure and enable SPI.
-	SPI_CTL0(Config::SPI_CH) = (uint32_t)(SPI_MASTER | SPI_TRANSMODE_FULLDUPLEX | SPI_FRAMESIZE_8BIT | SPI_NSS_SOFT | SPI_ENDIAN_MSB | SPI_CK_PL_LOW_PH_1EDGE | SPI_PSC_8);
-	SPI_CTL1(Config::SPI_CH) = (uint32_t)(SPI_CTL1_DMATEN);
-	spi_enable(Config::SPI_CH);
-
-	// Enable lcd controller.
-	this -> cs_active();
-
-	// Initialize the display.
-	for (const uint8_t* p = this -> g_st7735s_init_sequence; *p != Command::TERMINATOR; p++)
-	{
-		this -> spi_wait_idle();
-		this -> spi_set_8bit();
-		this -> rs_mode_cmd();
-		spi_i2s_data_transmit(Config::SPI_CH, *p++);
-		
-		if (*p == Command::TERMINATOR)
-		{
-			continue;
-		}
-		
-		this -> spi_wait_idle();
-		this -> rs_mode_data();
-		
-		while(*p != Command::TERMINATOR)
-		{
-			this -> spi_wait_tbe();
-			spi_i2s_data_transmit(Config::SPI_CH, *p++);
-		}
-	}
-
-	//----------------------------------------------------------------
-	//	RETURN
-	//----------------------------------------------------------------
-	
-	return false;
+    //Initialize SPI that communicates with the display
+    f_ret |= this -> init_spi();
+    //Initialize the DMA that accelerates the SPI
+    f_ret |= this -> init_dma();
+    //Send ST7735 Initialization sequence
+    f_ret |= this -> init_st7735();
+    
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
+    
+    return f_ret;
 }	//End Public init: init | void |
 
-	/*********************************************************************************************************************************************************
-	**********************************************************************************************************************************************************
-	**	PUBLIC METHODS
-	**********************************************************************************************************************************************************
-	*********************************************************************************************************************************************************/
+    /*********************************************************************************************************************************************************
+    **********************************************************************************************************************************************************
+    **	PUBLIC METHODS
+    **********************************************************************************************************************************************************
+    *********************************************************************************************************************************************************/
 
 /***************************************************************************/
 //!	@brief Public Method
 //!	color | uint8_t | uint8_t | uint8_t |
 /***************************************************************************/
-//! @return bool | false = OK | true = ERR
+//! @param r | uint8_t | 8bit red color channel
+//! @param g | uint8_t | 8bit green color channel
+//! @param b | uint8_t | 8bit blue color channel
+//! @return uint16_t | RGB565 color compatible with ST7735 display color space
 //! @details
-//!	convert from 24b 8R8G8B space to 16bit 5R6G5B space
-//!         RRRRRRRR
-//!         GGGGGGGG
-//!         BBBBBBBB
-//!	RRRRRGGGGGGBBBBB
+//!	\n	convert from 24b 8R8G8B space to 16bit 5R6G5B space
+//!	\n          RRRRRRRR
+//!	\n          GGGGGGGG
+//!	\n          BBBBBBBB
+//!	\n	RRRRRGGGGGGBBBBB
 /***************************************************************************/
 
 uint16_t Display::color( uint8_t r, uint8_t g, uint8_t b )
 {
-	//----------------------------------------------------------------
-	//	RETURN
-	//----------------------------------------------------------------
-	
-	return ( ((uint16_t)0) | ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | ((b & 0xF8) >> 3) );
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
+    
+    return ( ((uint16_t)0) | ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | ((b & 0xF8) >> 3) );
 }	//End Public Method: color | uint8_t | uint8_t | uint8_t |
 
 /***************************************************************************/
 //!	@brief public method
 //!	register_sprite | int | int | int | int | uint16_t * |
 /***************************************************************************/
+//! @param origin_h | int | starting top left corner height of the sprite
+//! @param origin_w | int | starting top left corner height of the sprite
+//! @param size_h | int | height size of the sprite
+//! @param size_w | int | width size of the sprite
+//! @param sprite_ptr | uint16_t * | pointer to RGB565 pixel color map
 //! @return int | number of pixels queued for draw
 //! @details
-//!	Ask the driver to draw a sprite
-//!	The draw method handles sprites that fill only part of the screen
-//!	If reworked, the buffer stays the same or is smaller than user buffer
-//!	1) Sprite fully inside screen area: the sprite is queued for draw
-//!	2) Sprite is fully outside screen area: no pixels are queued for draw
-//!	3) sprite is partially outside screen area: the method rework the buffer to include only pixel that can be drawn
+//!	\n	Ask the driver to draw a sprite
+//!	\n	The draw method handles sprites that fill only part of the screen
+//!	\n	If reworked, the buffer stays the same or is smaller than user buffer
+//!	\n	1) Sprite fully inside screen area: the sprite is queued for draw
+//!	\n	2) Sprite is fully outside screen area: no pixels are queued for draw
+//!	\n	3) sprite is partially outside screen area: the method rework the buffer to include only pixel that can be drawn
 /***************************************************************************/
 
 int Display::register_sprite( int origin_h, int origin_w, int size_h, int size_w, uint16_t* sprite_ptr )
 {
-	//----------------------------------------------------------------
-	//	BODY
-	//----------------------------------------------------------------
-	//! @todo handle partial sprite draw
-	
-	this -> g_sprite.origin_w		= origin_w;
-	this -> g_sprite.origin_h		= origin_h;
-	this -> g_sprite.size_w			= size_w;
-	this -> g_sprite.size_h			= size_h;
-	this -> g_sprite.size			= size_w *size_h;
-	this -> g_sprite.b_solid_color	= false;
-	this -> g_sprite.sprite_ptr		= sprite_ptr;
-	//Start the FSM
-	this -> g_sprite_status		= 1;
+    //----------------------------------------------------------------
+    //	BODY
+    //----------------------------------------------------------------
+    //! @todo handle partial sprite draw
+    
+    this -> g_sprite.origin_w		= origin_w;
+    this -> g_sprite.origin_h		= origin_h;
+    this -> g_sprite.size_w			= size_w;
+    this -> g_sprite.size_h			= size_h;
+    this -> g_sprite.size			= size_w *size_h;
+    this -> g_sprite.b_solid_color	= false;
+    this -> g_sprite.sprite_ptr		= sprite_ptr;
+    //Start the FSM
+    this -> g_sprite_status		= 1;
 
-	//----------------------------------------------------------------
-	//	RETURN
-	//----------------------------------------------------------------
-	
-	return (size_w *size_h);
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
+    
+    return (size_w *size_h);
 }	//End Public Method: register_sprite | int | int | int | int | uint16_t * |
 
 /***************************************************************************/
 //!	@brief public method
 //!	register_sprite | int | int | int | int | uint16_t |
 /***************************************************************************/
+//! @param origin_h | int | starting top left corner height of the sprite
+//! @param origin_w | int | starting top left corner height of the sprite
+//! @param size_h | int | height size of the sprite
+//! @param size_w | int | width size of the sprite
+//! @param sprite_color | uint16_t | RGB565 pixel solid color for the full sprite
 //! @return int | number of pixels queued for draw
 //! @details
-//!	Ask the driver to draw a sprite with a solid color
-//!	The draw method handles sprites that fill only part of the screen
-//!	If reworked, the buffer stays the same or is smaller than user buffer
-//!	1) Sprite fully inside screen area: the sprite is queued for draw
-//!	2) Sprite is fully outside screen area: no pixels are queued for draw
-//!	3) sprite is partially outside screen area: the method rework the buffer to include only pixel that can be drawn
+//!	\n	Ask the driver to draw a sprite with a solid color
+//!	\n	The draw method handles sprites that fill only part of the screen
+//!	\n	If reworked, the buffer stays the same or is smaller than user buffer
+//!	\n	1) Sprite fully inside screen area: the sprite is queued for draw
+//!	\n	2) Sprite is fully outside screen area: no pixels are queued for draw
+//!	\n	3) sprite is partially outside screen area: the method rework the buffer to include only pixel that can be drawn
 /***************************************************************************/
 
 int Display::register_sprite( int origin_h, int origin_w, int size_h, int size_w, uint16_t sprite_color )
 {
-	//----------------------------------------------------------------
-	//	BODY
-	//----------------------------------------------------------------
-	//! @todo handle partial sprite draw
-	
-	//Size of the sprite
-	this -> g_sprite.origin_w		= origin_w;
-	this -> g_sprite.origin_h		= origin_h;
-	this -> g_sprite.size_w			= size_w;
-	this -> g_sprite.size_h			= size_h;
-	this -> g_sprite.size			= size_w *size_h;
-	//Draw a solid color
-	this -> g_sprite.b_solid_color	= true;
-	this -> g_sprite.solid_color	= sprite_color;
-	//Start the FSM
-	this -> g_sprite_status			= 1;
+    //----------------------------------------------------------------
+    //	BODY
+    //----------------------------------------------------------------
+    //! @todo handle partial sprite draw
+    
+    //Size of the sprite
+    this -> g_sprite.origin_w		= origin_w;
+    this -> g_sprite.origin_h		= origin_h;
+    this -> g_sprite.size_w			= size_w;
+    this -> g_sprite.size_h			= size_h;
+    this -> g_sprite.size			= size_w *size_h;
+    //Draw a solid color
+    this -> g_sprite.b_solid_color	= true;
+    this -> g_sprite.solid_color	= sprite_color;
+    //Start the FSM
+    this -> g_sprite_status			= 1;
 
-	//----------------------------------------------------------------
-	//	RETURN
-	//----------------------------------------------------------------
-	
-	return (this -> g_sprite.size);
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
+    
+    return (this -> g_sprite.size);
 }	//End Public Method: register_sprite | int | int | int | int | uint16_t * |
 
 /***************************************************************************/
@@ -599,314 +624,341 @@ int Display::register_sprite( int origin_h, int origin_w, int size_h, int size_w
 /***************************************************************************/
 //! @return bool | false = IDLE | true = BUSY
 //! @details
-//!	Execute a step of the FSM that interfaces with the physical display
-//!	Handle both solid color and color map
-//!	sprite data must already be valid before execution
+//!	\n	Execute a step of the FSM that interfaces with the physical display
+//!	\n	Handle both solid color and color map
+//!	\n	sprite data must already be valid before execution
 /***************************************************************************/
 
 bool Display::update_sprite( void )
 {
-	//----------------------------------------------------------------
-	//	BODY
-	//----------------------------------------------------------------
-	
-	//Switch: FSM status
-	switch (this -> g_sprite_status)
-	{
-		//IDLE
-		case 0:
-		{
-			//Do Nothing
-			
-			break;
-		}
-		//Row address
-		case 1:
-		{
-			if ((SPI_STAT( Config::SPI_CH ) &SPI_STAT_TRANS) == 0)
-			{
-				this -> spi_set_8bit();
-				this -> rs_mode_cmd();
-				spi_i2s_data_transmit(Config::SPI_CH, Command::SEND_ROW_ADDRESS);
-				//Next state
-				this -> g_sprite_status++;
-			}
-			break;
-		}
-		//Row Address start
-		case 2:
-		{
-			//If: user wants to use the DMA
-			if (Config::USE_DMA == true)
-			{
-				if ((SPI_STAT( Config::SPI_CH ) &SPI_STAT_TRANS) == 0)
-				{
-					//Configure HW
-					this -> rs_mode_data();
-					this -> spi_set_16bit();
-					//Load addresses on the address buffer
-					this -> g_address_buffer[ 0 ] = this -> g_sprite.origin_w +Config::ROW_ADDRESS_OFFSET;
-					this -> g_address_buffer[ 1 ] = this -> g_sprite.origin_w +Config::ROW_ADDRESS_OFFSET +this -> g_sprite.size_w -1;
-					//Program the DMA
-					dma_channel_disable( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH );
-					dma_memory_width_config( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH, DMA_MEMORY_WIDTH_16BIT );
-					dma_periph_width_config( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH, DMA_PERIPHERAL_WIDTH_16BIT );
-					dma_memory_address_config( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH, (uint32_t)(this -> g_address_buffer) );
-					dma_memory_increase_enable( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH );
-					dma_transfer_number_config( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH, 2 );
-					//Begin the DMA transfer
-					dma_channel_enable( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH );
-					//Next state
-					this -> g_sprite_status += 2;
-				}
-			}
-			//End If: user doesn't want to use the DMA
-			else
-			{
-				if ((SPI_STAT( Config::SPI_CH ) &SPI_STAT_TRANS) == 0)
-				{
-					this -> spi_set_16bit();
-					this -> rs_mode_data();
-					spi_i2s_data_transmit(Config::SPI_CH, this -> g_sprite.origin_w +Config::ROW_ADDRESS_OFFSET);
-					//Next state 
-					this -> g_sprite_status++;
-				}
-			}
-			break;
-		}
-		//Row Address stop
-		case 3:
-		{
-			if ((SPI_STAT( Config::SPI_CH ) &SPI_STAT_TBE) != 0)
-			{
-				spi_i2s_data_transmit(Config::SPI_CH, this -> g_sprite.origin_w +Config::ROW_ADDRESS_OFFSET +this -> g_sprite.size_w -1);	
-				//Next state
-				this -> g_sprite_status++;
-			}
-			break;
-		}	
-		//Col Address
-		case 4:
-		{
-			if ((SPI_STAT( Config::SPI_CH ) &SPI_STAT_TRANS) == 0)
-			{
-				this -> spi_set_8bit();
-				this -> rs_mode_cmd();
-				spi_i2s_data_transmit(Config::SPI_CH, Command::SEND_COL_ADDRESS);
-				//Next state
-				this -> g_sprite_status++;
-			}
-			break;
-		}	
-		//Col Address Start
-		case 5:
-		{
-			//If: user wants to use the DMA
-			if (Config::USE_DMA == true)
-			{
-				if ((SPI_STAT( Config::SPI_CH ) &SPI_STAT_TRANS) == 0)
-				{
-					//Configure HW
-					this -> rs_mode_data();
-					this -> spi_set_16bit();
-					//Load addresses on the address buffer
-					this -> g_address_buffer[ 0 ] = this -> g_sprite.origin_h +Config::COL_ADDRESS_OFFSET;
-					this -> g_address_buffer[ 1 ] = this -> g_sprite.origin_h +Config::COL_ADDRESS_OFFSET +this -> g_sprite.size_h -1;
-					//Program the DMA
-					dma_channel_disable( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH );
-					dma_memory_width_config( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH, DMA_MEMORY_WIDTH_16BIT );
-					dma_periph_width_config( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH, DMA_PERIPHERAL_WIDTH_16BIT );
-					dma_memory_address_config( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH, (uint32_t)(this -> g_address_buffer) );
-					dma_memory_increase_enable( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH );
-					dma_transfer_number_config( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH, 2 );
-					//Begin the DMA transfer
-					dma_channel_enable( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH );
-					//Next state
-					this -> g_sprite_status += 2;
-				}
-			}
-			//End If: user doesn't want to use the DMA
-			else
-			{
-				if ((SPI_STAT( Config::SPI_CH ) &SPI_STAT_TRANS) == 0)
-				{
-					this -> spi_set_16bit();
-					this -> rs_mode_data();
-					spi_i2s_data_transmit(Config::SPI_CH, this -> g_sprite.origin_h +Config::COL_ADDRESS_OFFSET);
-					//Next state 
-					this -> g_sprite_status++;
-				}
-			}
-			break;
-		}
-		//Col Address Stop
-		case 6:
-		{
-			if ((SPI_STAT( Config::SPI_CH ) &SPI_STAT_TBE) != 0)
-			{
-				spi_i2s_data_transmit( Config::SPI_CH, this -> g_sprite.origin_h +Config::COL_ADDRESS_OFFSET +this -> g_sprite.size_h -1 );
-				//Next state
-				this -> g_sprite_status++;
-			}
-			break;
-		}
-		//Write Memory
-		case 7:
-		{
-			if ((SPI_STAT( Config::SPI_CH ) &SPI_STAT_TRANS) == 0)
-			{
-				this -> spi_set_8bit();
-				this -> rs_mode_cmd();
-				spi_i2s_data_transmit( Config::SPI_CH, Command::WRITE_MEM );
-				//Next state
-				this -> g_sprite_status++;
-			}
-			break;
-		}
-		//DMA Send
-		case 8:
-		{
-			if ((SPI_STAT( Config::SPI_CH ) &SPI_STAT_TRANS) == 0)
-			{
-				this -> rs_mode_data();
-				this -> spi_set_16bit();
-				
-				dma_channel_disable( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH );
-				dma_memory_width_config( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH, DMA_MEMORY_WIDTH_16BIT );
-				dma_periph_width_config( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH, DMA_PERIPHERAL_WIDTH_16BIT );
-				
-				//If: the sprite uses a color map
-				if (this -> g_sprite.b_solid_color == false)
-				{
-					dma_memory_address_config( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH, (uint32_t)(this -> g_sprite.sprite_ptr) );
-					dma_memory_increase_enable( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH );
-				}	//End If: the sprite uses a color map
-				//If: the sprite is solid color
-				else //if (this -> g_sprite.b_solid_color == true)
-				{
-					dma_memory_address_config( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH, (uint32_t)(&g_sprite.solid_color) );
-					dma_memory_increase_disable( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH );
-				}	//End If: the sprite is solid color
-				
-				dma_transfer_number_config( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH, this -> g_sprite.size );
-				dma_channel_enable( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH );
-				
-				//Next state
-				this -> g_sprite_status++;
-			}
-			break;
-		}			
-		//STOP
-		case 9:
-		{
-			if ((SPI_STAT( Config::SPI_CH ) &SPI_STAT_TRANS) == 0)
-			{
-				//Return to IDLE
-				this -> g_sprite_status = 0;
-			}
-			break;
-		}
-		//ERR
-		default:
-		{
-			//Return to IDLE
-			this -> g_sprite_status = 0;
-		}
-	}	//End Switch: FSM Status
-	
-	//----------------------------------------------------------------
-	//	RETURN
-	//----------------------------------------------------------------
-	
-	return (this -> g_sprite_status != 0);
+    //----------------------------------------------------------------
+    //	BODY
+    //----------------------------------------------------------------
+    
+    //Switch: FSM status
+    switch (this -> g_sprite_status)
+    {
+        //IDLE
+        case 0:
+        {
+            //Do Nothing
+            
+            break;
+        }
+        //Row address
+        case 1:
+        {
+            if (this -> is_spi_idle() == true)
+            {
+                //Commands are 8b
+                this -> spi_set_8bit();
+                this -> rs_mode_cmd();
+                spi_i2s_data_transmit(Config::SPI_CH, Command::SEND_ROW_ADDRESS);
+                //Next state
+                this -> g_sprite_status++;
+            }
+            break;
+        }
+        //Row Address start
+        case 2:
+        {
+            //If: user wants to use the DMA
+            if (Config::USE_DMA == true)
+            {
+                if (this -> is_spi_idle() == true)
+                {
+                    //Configure Data are 16b
+                    this -> rs_mode_data();
+                    this -> spi_set_16bit();
+                    //Load addresses on the address buffer
+                    this -> g_address_buffer[ 0 ] = this -> g_sprite.origin_w +Config::ROW_ADDRESS_OFFSET;
+                    this -> g_address_buffer[ 1 ] = this -> g_sprite.origin_w +Config::ROW_ADDRESS_OFFSET +this -> g_sprite.size_w -1;
+                    //Program the DMA to send the address
+                    this -> dma_send_map16( this -> g_address_buffer, 2 );
+                    //Next state. Skip second SPI transfer
+                    this -> g_sprite_status += 2;
+                }
+            }
+            //End If: user doesn't want to use the DMA
+            else
+            {
+                if (this -> is_spi_idle() == true)
+                {
+                    this -> spi_set_16bit();
+                    this -> rs_mode_data();
+                    spi_i2s_data_transmit(Config::SPI_CH, this -> g_sprite.origin_w +Config::ROW_ADDRESS_OFFSET);
+                    //Next state 
+                    this -> g_sprite_status++;
+                }
+            }
+            break;
+        }
+        //Row Address stop
+        case 3:
+        {
+            if (this -> is_spi_done_tx() == true)
+            {
+                spi_i2s_data_transmit(Config::SPI_CH, this -> g_sprite.origin_w +Config::ROW_ADDRESS_OFFSET +this -> g_sprite.size_w -1);	
+                //Next state
+                this -> g_sprite_status++;
+            }
+            break;
+        }	
+        //Col Address
+        case 4:
+        {
+            if (this -> is_spi_idle() == true)
+            {
+                //Commands are 8b
+                this -> spi_set_8bit();
+                this -> rs_mode_cmd();
+                spi_i2s_data_transmit(Config::SPI_CH, Command::SEND_COL_ADDRESS);
+                //Next state
+                this -> g_sprite_status++;
+            }
+            break;
+        }	
+        //Col Address Start
+        case 5:
+        {
+            //If: user wants to use the DMA
+            if (Config::USE_DMA == true)
+            {
+                if (this -> is_spi_idle() == true)
+                {
+                    //Configure HW
+                    this -> rs_mode_data();
+                    this -> spi_set_16bit();
+                    //Load addresses on the address buffer
+                    this -> g_address_buffer[ 0 ] = this -> g_sprite.origin_h +Config::COL_ADDRESS_OFFSET;
+                    this -> g_address_buffer[ 1 ] = this -> g_sprite.origin_h +Config::COL_ADDRESS_OFFSET +this -> g_sprite.size_h -1;
+                    //Program the DMA to send the address
+                    this -> dma_send_map16( this -> g_address_buffer, 2 );
+                    //Next state. Skip second SPI transfer
+                    this -> g_sprite_status += 2;
+                }
+            }
+            //End If: user doesn't want to use the DMA
+            else
+            {
+                if (this -> is_spi_idle() == true)
+                {
+                    this -> spi_set_16bit();
+                    this -> rs_mode_data();
+                    spi_i2s_data_transmit(Config::SPI_CH, this -> g_sprite.origin_h +Config::COL_ADDRESS_OFFSET);
+                    //Next state 
+                    this -> g_sprite_status++;
+                }
+            }
+            break;
+        }
+        //Col Address Stop
+        case 6:
+        {
+            if (this -> is_spi_done_tx() == true)
+            {
+                spi_i2s_data_transmit( Config::SPI_CH, this -> g_sprite.origin_h +Config::COL_ADDRESS_OFFSET +this -> g_sprite.size_h -1 );
+                //Next state
+                this -> g_sprite_status++;
+            }
+            break;
+        }
+        //Write Memory
+        case 7:
+        {
+            if (this -> is_spi_idle() == true)
+            {
+                this -> spi_set_8bit();
+                this -> rs_mode_cmd();
+                spi_i2s_data_transmit( Config::SPI_CH, Command::WRITE_MEM );
+                //Next state. DMA uses a single state, SPI use one state per pixel
+                this -> g_sprite_status = ((Config::USE_DMA == true)?(8):(10));
+            }
+            break;
+        }
+        //DMA Send
+        case 8:
+        {
+            if (this -> is_spi_idle() == true)
+            {
+                this -> rs_mode_data();
+                this -> spi_set_16bit();
+                //If: the sprite uses a color map
+                if (this -> g_sprite.b_solid_color == false)
+                {
+                    //Program the DMA to send the pixel map
+                    this -> dma_send_map16( this -> g_sprite.sprite_ptr, this -> g_sprite.size );
+                }	//End If: the sprite uses a color map
+                //If: the sprite is solid color
+                else //if (this -> g_sprite.b_solid_color == true)
+                {
+                    //Program the DMA to send the same pixel a number of times
+                    this -> dma_send_solid16( &this -> g_sprite.solid_color, this -> g_sprite.size );    
+                }	//End If: the sprite is solid color
+                                
+                //STOP
+                this -> g_sprite_status = 9;
+            }
+            break;
+        }			
+        //STOP
+        case 9:
+        {
+            if (this -> is_spi_idle() == true)
+            {
+                //Return to IDLE
+                this -> g_sprite_status = 0;
+            }
+            break;
+        }
+        //SPI SEND FIRST
+        case 10:
+        {
+            if (this -> is_spi_idle() == true)
+            {
+                this -> rs_mode_data();
+                this -> spi_set_16bit();
+                spi_i2s_data_transmit( Config::SPI_CH, (this -> g_sprite.b_solid_color == false)?(this -> g_sprite.sprite_ptr[this -> g_sprite_status -10]):(this -> g_sprite.solid_color) );
+                //If: all pixels have been transfered
+                if ((this -> g_sprite_status -10) >= (this -> g_sprite.size -1))
+                {
+                    //STOP
+                    this -> g_sprite_status = 9;
+                }
+                //If: there are pixels to be transfered
+                else
+                {
+                    //Next pixel
+                    this -> g_sprite_status++;
+                }	
+            }
+            break;
+        }
+        //SPI SEND
+        default:
+        { 
+            if (this -> is_spi_done_tx() == true)
+            {
+                spi_i2s_data_transmit( Config::SPI_CH, (this -> g_sprite.b_solid_color == false)?(this -> g_sprite.sprite_ptr[this -> g_sprite_status -10]):(this -> g_sprite.solid_color) );
+                //If: all pixels have been transfered
+                if ((this -> g_sprite_status -10) >= (this -> g_sprite.size -1))
+                {
+                    //STOP
+                    this -> g_sprite_status = 9;
+                }
+                //If: there are pixels to be transfered
+                else
+                {
+                    //Next pixel
+                    this -> g_sprite_status++;
+                }	
+            }
+        }
+    }	//End Switch: FSM Status
+    
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
+    
+    return (this -> g_sprite_status != 0);
 }	//End public method: update_sprite | void |
 
 /***************************************************************************/
 //!	@brief public method
 //!	draw_sprite | int | int | int | int | uint16_t * |
 /***************************************************************************/
+//! @param origin_h | int | starting top left corner height of the sprite
+//! @param origin_w | int | starting top left corner height of the sprite
+//! @param size_h | int | height size of the sprite
+//! @param size_w | int | width size of the sprite
+//! @param sprite_ptr | uint16_t * | pointer to RGB565 pixel color map
 //! @return int | number of pixels drawn
 //! @details
-//!	Draw a sprite
-//! Blocking method
-//! Draw a color map, requires a user buffer of the proper size
+//!	\n	Draw a sprite
+//!	\n Blocking method
+//!	\n Draw a color map, requires a user buffer of the proper size
 /***************************************************************************/
 
 int Display::draw_sprite( int origin_h, int origin_w, int size_h, int size_w, uint16_t* sprite_ptr )
 {
-	//----------------------------------------------------------------
-	//	VARS
-	//----------------------------------------------------------------
-	
-	//temp return
-	bool f_ret;
-	//Number of pixels drawn by the method
-	int pixel_count;
-	
-	//----------------------------------------------------------------
-	//	BODY
-	//----------------------------------------------------------------
+    //----------------------------------------------------------------
+    //	VARS
+    //----------------------------------------------------------------
+    
+    //temp return
+    bool f_ret;
+    //Number of pixels drawn by the method
+    int pixel_count;
+    
+    //----------------------------------------------------------------
+    //	BODY
+    //----------------------------------------------------------------
 
-	//Register the sprite to be drawn. Authorize the update FSM to draw the sprite through the "update_sprite" non blocking method
-	pixel_count = this -> register_sprite( origin_h, origin_w, size_h, size_w, sprite_ptr );
-	//Allow FSM to run if I have at least one pixel to draw
-	f_ret = (pixel_count > 0);
-	//While: the driver FSM is busy
-	while (f_ret == true)
-	{
-		//Execute a step of the FSM
-		f_ret = this -> update_sprite();
-	}
+    //Register the sprite to be drawn. Authorize the update FSM to draw the sprite through the "update_sprite" non blocking method
+    pixel_count = this -> register_sprite( origin_h, origin_w, size_h, size_w, sprite_ptr );
+    //Allow FSM to run if I have at least one pixel to draw
+    f_ret = (pixel_count > 0);
+    //While: the driver FSM is busy
+    while (f_ret == true)
+    {
+        //Execute a step of the FSM
+        f_ret = this -> update_sprite();
+    }
 
-	//----------------------------------------------------------------
-	//	RETURN
-	//----------------------------------------------------------------
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
 
-	return pixel_count;
+    return pixel_count;
 }	//End Public Method: draw_sprite | int | int | int | int | uint16_t * |
 
 /***************************************************************************/
 //!	@brief public method
 //!	draw_sprite | int | int | int | int | uint16_t |
 /***************************************************************************/
+//! @param origin_h | int | starting top left corner height of the sprite
+//! @param origin_w | int | starting top left corner height of the sprite
+//! @param size_h | int | height size of the sprite
+//! @param size_w | int | width size of the sprite
+//! @param sprite_color | uint16_t | RGB565 pixel solid color for the full sprite
 //! @return int | number of pixels drawn
 //! @details
-//!	Draw a sprite
-//! Blocking method
-//! Draw a solid color sprite and doesn't require a color map
+//!	\n Draw a sprite
+//!	\n Blocking method
+//!	\n Draw a solid color sprite and doesn't require a color map
 /***************************************************************************/
 
 int Display::draw_sprite( int origin_h, int origin_w, int size_h, int size_w, uint16_t sprite_color )
 {
-	//----------------------------------------------------------------
-	//	VARS
-	//----------------------------------------------------------------
-	
-	//temp return
-	bool f_ret;
-	//Number of pixels drawn by the method
-	int pixel_count;
-	
-	//----------------------------------------------------------------
-	//	BODY
-	//----------------------------------------------------------------
+    //----------------------------------------------------------------
+    //	VARS
+    //----------------------------------------------------------------
+    
+    //temp return
+    bool f_ret;
+    //Number of pixels drawn by the method
+    int pixel_count;
+    
+    //----------------------------------------------------------------
+    //	BODY
+    //----------------------------------------------------------------
 
-	//Register the sprite to be drawn. Authorize the update FSM to draw the sprite through the "update_sprite" non blocking method
-	pixel_count = this -> register_sprite( origin_h, origin_w, size_h, size_w, sprite_color );
-	//Allow FSM to run if I have at least one pixel to draw
-	f_ret = (pixel_count > 0);
-	//While: the driver FSM is busy
-	while (f_ret == true)
-	{
-		//Execute a step of the FSM
-		f_ret = this -> update_sprite();
-	}
+    //Register the sprite to be drawn. Authorize the update FSM to draw the sprite through the "update_sprite" non blocking method
+    pixel_count = this -> register_sprite( origin_h, origin_w, size_h, size_w, sprite_color );
+    //Allow FSM to run if I have at least one pixel to draw
+    f_ret = (pixel_count > 0);
+    //While: the driver FSM is busy
+    while (f_ret == true)
+    {
+        //Execute a step of the FSM
+        f_ret = this -> update_sprite();
+    }
 
-	//----------------------------------------------------------------
-	//	RETURN
-	//----------------------------------------------------------------
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
 
-	return pixel_count;
+    return pixel_count;
 }	//End Public Method: draw_sprite | int | int | int | int | uint16_t |
 
 /***************************************************************************/
@@ -919,77 +971,210 @@ int Display::draw_sprite( int origin_h, int origin_w, int size_h, int size_w, ui
 //!	\n Draw a black sprite the size of the screen
 /***************************************************************************/
 
-int Display::clear( void )
+inline int Display::clear( void )
 {
-	//----------------------------------------------------------------
-	//	BODY
-	//----------------------------------------------------------------
+    //----------------------------------------------------------------
+    //	BODY
+    //----------------------------------------------------------------
 
-	//blocking draw sprite
-	int pixel_count = this -> draw_sprite( 0, 0, Config::HEIGHT, Config::WIDTH, Display::color( 0, 0, 0 ) );
+    //blocking draw sprite
+    int pixel_count = this -> draw_sprite( 0, 0, Config::HEIGHT, Config::WIDTH, Display::color( 0, 0, 0 ) );
 
-	//----------------------------------------------------------------
-	//	RETURN
-	//----------------------------------------------------------------
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
 
-	return pixel_count;
+    return pixel_count;
 }	//End public method: clear | void |
 
 /***************************************************************************/
 //!	@brief public method
 //!	clear | void |
 /***************************************************************************/
+//! @param color | uint16_t | clear the display to a solid color
 //! @return int | number of pixels drawn
 //! @details
 //!	\n Clear the screen. Blocking method.
 //!	\n Draw a black sprite the size of the screen
 /***************************************************************************/
 
-int Display::clear( uint16_t color )
+inline int Display::clear( uint16_t color )
 {
-	//----------------------------------------------------------------
-	//	BODY
-	//----------------------------------------------------------------
+    //----------------------------------------------------------------
+    //	BODY
+    //----------------------------------------------------------------
 
-	int pixel_count = this -> draw_sprite( 0, 0, Config::HEIGHT, Config::WIDTH, color );
+    int pixel_count = this -> draw_sprite( 0, 0, Config::HEIGHT, Config::WIDTH, color );
 
-	//----------------------------------------------------------------
-	//	RETURN
-	//----------------------------------------------------------------
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
 
-	return pixel_count;
+    return pixel_count;
 }	//End public method: clear | void |
 
-	/*********************************************************************************************************************************************************
-	**********************************************************************************************************************************************************
-	**	PRIVATE INIT
-	**********************************************************************************************************************************************************
-	*********************************************************************************************************************************************************/
+    /*********************************************************************************************************************************************************
+    **********************************************************************************************************************************************************
+    **	PRIVATE INIT
+    **********************************************************************************************************************************************************
+    *********************************************************************************************************************************************************/
 
 /***************************************************************************/
 //!	@brief Private init
 //!	init_gpio | void |
 /***************************************************************************/
-//! @return bool | false = BUSY | true = IDLE
+//! @return bool | false = OK | true = ERR
 //! @details
 //!	\n HAL method
 //!	\n initialize GPIO configuration
 /***************************************************************************/
 
-void Display::init_gpio( void )
+inline bool Display::init_gpio( void )
 {
-	//----------------------------------------------------------------
-	//	RETURN
-	//----------------------------------------------------------------
-	
-	return;
+    //----------------------------------------------------------------
+    //	BODY
+    //----------------------------------------------------------------
+    
+    //Clock the GPIOs
+    rcu_periph_clock_enable( RCU_GPIOA );
+    rcu_periph_clock_enable( RCU_GPIOB );
+    rcu_periph_clock_enable( RCU_AF );
+        
+    //LCD RS command pin
+    gpio_init( Config::RS_GPIO, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, Config::RS_PIN );
+    //LCD RST reset pin
+    gpio_init( Config::RST_GPIO, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, Config::RST_PIN );
+    //LCD CS chip select pin
+    gpio_init( Config::SPI_CS_GPIO, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, Config::SPI_CS_PIN );
+    //Set the SPI0 pins to Alternate Functions
+    gpio_init( Config::SPI_CLK_GPIO, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, Config::SPI_CLK_PIN );
+    gpio_init( Config::SPI_MISO_GPIO, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, Config::SPI_MISO_PIN );
+    gpio_init( Config::SPI_MOSI_GPIO, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, Config::SPI_MOSI_PIN );
+
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
+    
+    return false; //OK
 }	//End Private init: init_gpio | void |
 
-	/*********************************************************************************************************************************************************
-	**********************************************************************************************************************************************************
-	**	PRIVATE HAL
-	**********************************************************************************************************************************************************
-	*********************************************************************************************************************************************************/
+/***************************************************************************/
+//!	@brief Private init
+//!	init_spi | void |
+/***************************************************************************/
+//! @return bool | false = OK | true = ERR
+//! @details
+//!	\n HAL method
+//!	\n Initialize SPI that communicates with the Display
+/***************************************************************************/
+
+inline bool Display::init_spi( void )
+{
+    //----------------------------------------------------------------
+    //	BODY
+    //----------------------------------------------------------------
+
+    //Clock the SPI
+    rcu_periph_clock_enable( RCU_SPI0 );
+    spi_i2s_deinit( Config::SPI_CH );
+    SPI_CTL0( Config::SPI_CH ) = (uint32_t)(SPI_MASTER | SPI_TRANSMODE_FULLDUPLEX | SPI_FRAMESIZE_8BIT | SPI_NSS_SOFT | SPI_ENDIAN_MSB | SPI_CK_PL_LOW_PH_1EDGE | SPI_PSC_8);
+    //If: DMA is accelerating the SPI
+    if (Config::USE_DMA == true)
+    {
+        SPI_CTL1( Config::SPI_CH ) = (uint32_t)(SPI_CTL1_DMATEN);
+    }
+    spi_enable( Config::SPI_CH );
+
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
+    
+    return false; //OK
+}	//End Private init: init_spi | void |
+
+/***************************************************************************/
+//!	@brief Private init
+//!	init_dma | void |
+/***************************************************************************/
+//! @return bool | false = OK | true = ERR
+//! @details
+//!	\n Initialize DMA that accelerates the SPI
+/***************************************************************************/
+
+inline bool Display::init_dma( void )
+{
+    //----------------------------------------------------------------
+    //	BODY
+    //----------------------------------------------------------------
+    
+    //CLock the DMA
+    rcu_periph_clock_enable( RCU_DMA0 );
+    dma_deinit( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH );
+    DMA_CHCTL( Config::DMA_SPI_TX, Config::DMA_SPI_TX_CH ) = (uint32_t)(DMA_PRIORITY_ULTRA_HIGH | DMA_CHXCTL_DIR);
+    DMA_CHPADDR( Config::DMA_SPI_TX, Config::DMA_SPI_TX_CH ) = (uint32_t)&SPI_DATA(Config::SPI_CH);
+
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
+    
+    return false; //OK
+}	//End Private init: init_dma | void |
+
+/***************************************************************************/
+//!	@brief Private init
+//!	init_st7735 | void |
+/***************************************************************************/
+//! @return bool | false = OK | true = ERR
+//! @details
+//!	\n Send initialization sequence to the ST7735 display controller
+//!	\n First byte in the sequence is command
+//!	\n Next bytes in the sequence are terminators
+//!	\n If the command is a terminator, it means the initialization sequence is complete
+/***************************************************************************/
+
+bool Display::init_st7735( void )
+{
+    //----------------------------------------------------------------
+    //	BODY
+    //----------------------------------------------------------------
+    
+    //Configure SPI and select display
+    this -> cs_active();
+    this -> spi_set_8bit();
+    //For: each command sequence
+    for (const uint8_t *str_p = this -> g_st7735s_init_sequence; *str_p != Command::TERMINATOR; str_p++)
+    {
+        //Wait SPI
+        this -> spi_wait_idle();
+        //Send command
+        this -> rs_mode_cmd();
+        spi_i2s_data_transmit(Config::SPI_CH, *str_p++);
+        //Wait SPI
+        this -> spi_wait_idle();
+        //Enter data mode
+        this -> rs_mode_data();
+        //While: I'm not done sendinga data
+        while(*str_p != Command::TERMINATOR)
+        {
+            //Wait SPI
+            this -> spi_wait_tbe();
+            //Send DATA
+            spi_i2s_data_transmit(Config::SPI_CH, *str_p++);
+        }
+    }	//End For: each command sequence
+
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
+    
+    return false; //OK
+}	//End Private init: init_st7735 | void |
+
+    /*********************************************************************************************************************************************************
+    **********************************************************************************************************************************************************
+    **	PRIVATE HAL
+    **********************************************************************************************************************************************************
+    *********************************************************************************************************************************************************/
 
 /***************************************************************************/
 //!	@brief Private HAL Method
@@ -997,17 +1182,16 @@ void Display::init_gpio( void )
 /***************************************************************************/
 //! @return bool | false = BUSY | true = IDLE
 //! @details
-//!	\n HAL method
 //!	\n return true when the SPI is IDLE
 /***************************************************************************/
 
 inline bool Display::is_spi_idle( void )
 {
-	//----------------------------------------------------------------
-	//	RETURN
-	//----------------------------------------------------------------
-	
-	return ((SPI_STAT( Config::SPI_CH ) &SPI_STAT_TRANS) == 0);
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
+    
+    return ((SPI_STAT( Config::SPI_CH ) &SPI_STAT_TRANS) == 0);
 }	//End Private HAL Method: is_spi_idle | void
 
 /***************************************************************************/
@@ -1015,27 +1199,44 @@ inline bool Display::is_spi_idle( void )
 //!	spi_wait_idle | void
 /***************************************************************************/
 //! @details
-//!	\n HAL method
 //!	\n Block execution until SPI is IDLE
 /***************************************************************************/
 
 inline void Display::spi_wait_idle( void )
 {
-	//----------------------------------------------------------------
-	//	BODY
-	//----------------------------------------------------------------
-	
-	//While: SPI is BUSY
-	while( (SPI_STAT( Config::SPI_CH ) &SPI_STAT_TRANS) != 0 )
-	{
-		//Block Execution
-	}
-	
-	//----------------------------------------------------------------
-	//	RETURN
-	//----------------------------------------------------------------
-	
-	return;
+    //----------------------------------------------------------------
+    //	BODY
+    //----------------------------------------------------------------
+    
+    //While: SPI is BUSY
+    while( (SPI_STAT( Config::SPI_CH ) &SPI_STAT_TRANS) != 0 )
+    {
+        //Block Execution
+    }
+    
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
+    
+    return;
+}	//End Private HAL Method: is_spi_idle | void
+
+/***************************************************************************/
+//!	@brief Private HAL Method
+//!	is_spi_done_tx | void
+/***************************************************************************/
+//! @return bool | false = BUSY | true = IDLE
+//! @details
+//!	\n return true when the SPI is done TX
+/***************************************************************************/
+
+inline bool Display::is_spi_done_tx( void )
+{
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
+    
+    return ((SPI_STAT( Config::SPI_CH ) &SPI_STAT_TBE ) != 0);
 }	//End Private HAL Method: is_spi_idle | void
 
 /***************************************************************************/
@@ -1043,66 +1244,141 @@ inline void Display::spi_wait_idle( void )
 //!	spi_wait_tbe | void |
 /***************************************************************************/
 //! @details
-//!	\n HAL method
 //!	\n Block execution until SPI is done TX
 /***************************************************************************/
 
 inline void Display::spi_wait_tbe( void )
 {
-	while( ( SPI_STAT( Config::SPI_CH ) &SPI_STAT_TBE ) == 0 )
-	{
-		//Block Execution
-	}
-	return;
+    //----------------------------------------------------------------
+    //	BODY
+    //----------------------------------------------------------------
+
+    while( ( SPI_STAT( Config::SPI_CH ) &SPI_STAT_TBE ) == 0 )
+    {
+        //Block Execution
+    }
+
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
+    
+    return;
 }	//End Private HAL Method: spi_wait_tbe | void |
+
+/***************************************************************************/
+//!	@brief Private HAL Method
+//!	cs_active | void |
+/***************************************************************************/
+//! @details
+//!	\n Select the ST7735 Display
+/***************************************************************************/
 
 inline void Display::cs_active( void )
 {
-	gpio_bit_reset( Config::SPI_CS_GPIO, Config::SPI_CS_PIN );
-	return;
-}
+    //----------------------------------------------------------------
+    //	BODY
+    //----------------------------------------------------------------
+
+    gpio_bit_reset( Config::SPI_CS_GPIO, Config::SPI_CS_PIN );
+
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
+
+    return;
+}	//End Private HAL Method: cs_active | void |
+
+/***************************************************************************/
+//!	@brief Private HAL Method
+//!	cs_inactive | void |
+/***************************************************************************/
+//! @details
+//!	\n Deselect the ST7735 Display
+/***************************************************************************/
 
 inline void Display::cs_inactive( void )
 {
-	gpio_bit_set( Config::SPI_CS_GPIO, Config::SPI_CS_PIN );
-	return;
-}
+    //----------------------------------------------------------------
+    //	BODY
+    //----------------------------------------------------------------
+
+    gpio_bit_set( Config::SPI_CS_GPIO, Config::SPI_CS_PIN );
+    
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
+
+    return;
+}	//End Private HAL Method: cs_inactive | void |
+
+/***************************************************************************/
+//!	@brief Private HAL Method
+//!	rs_mode_cmd | void |
+/***************************************************************************/
+//! @details
+//!	\n Send a command to the display
+/***************************************************************************/
 
 inline void Display::rs_mode_cmd( void )
 {
-	gpio_bit_reset( Config::RS_GPIO, Config::RS_PIN );
-	return;
-}
+    //----------------------------------------------------------------
+    //	BODY
+    //----------------------------------------------------------------
+
+    gpio_bit_reset( Config::RS_GPIO, Config::RS_PIN );
+    
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
+
+    return;
+}	//End Private HAL Method: rs_mode_cmd | void |
+
+/***************************************************************************/
+//!	@brief Private HAL Method
+//!	rs_mode_data | void |
+/***************************************************************************/
+//! @details
+//!	\n Send data to the display
+/***************************************************************************/
 
 inline void Display::rs_mode_data( void )
 {
-	gpio_bit_set( Config::RS_GPIO, Config::RS_PIN );
-	return;
-}
+    //----------------------------------------------------------------
+    //	BODY
+    //----------------------------------------------------------------
+
+    gpio_bit_set( Config::RS_GPIO, Config::RS_PIN );
+    
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
+
+    return;
+}	//End Private HAL Method: rs_mode_data | void |
 
 /***************************************************************************/
 //!	@brief Private HAL Method
 //!	rst_active | void |
 /***************************************************************************/
 //! @details
-//!	\n HAL method
 //!	\n Assert the reset pin of the physical display
 //!	\n The display will need time to become ready after an assert
 /***************************************************************************/
 
 inline void Display::rst_active( void )
 {
-	//----------------------------------------------------------------
-	//	BODY
-	//----------------------------------------------------------------
-	
-	gpio_bit_reset( Config::RST_GPIO, Config::RST_PIN );
-	
-	//----------------------------------------------------------------
-	//	RETURN
-	//----------------------------------------------------------------
-	
-	return;
+    //----------------------------------------------------------------
+    //	BODY
+    //----------------------------------------------------------------
+    
+    gpio_bit_reset( Config::RST_GPIO, Config::RST_PIN );
+    
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
+    
+    return;
 }	//End Private HAL Method: rst_active | void |
 
 /***************************************************************************/
@@ -1110,23 +1386,22 @@ inline void Display::rst_active( void )
 //!	rst_inactive | void |
 /***************************************************************************/
 //! @details
-//!	\n HAL method
 //!	\n Deassert the reset pin of the physical display
 /***************************************************************************/
 
 inline void Display::rst_inactive( void )
 {
-	//----------------------------------------------------------------
-	//	BODY
-	//----------------------------------------------------------------
-	
-	gpio_bit_set(Config::RST_GPIO, Config::RST_PIN);
-	
-	//----------------------------------------------------------------
-	//	RETURN
-	//----------------------------------------------------------------
-	
-	return;
+    //----------------------------------------------------------------
+    //	BODY
+    //----------------------------------------------------------------
+    
+    gpio_bit_set( Config::RST_GPIO, Config::RST_PIN );
+    
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
+    
+    return;
 }	//End Private HAL Method: rst_inactive | void |
 
 /***************************************************************************/
@@ -1134,28 +1409,27 @@ inline void Display::rst_inactive( void )
 //!	spi_set_8bit | void |
 /***************************************************************************/
 //! @details
-//!	\n HAL method
 //!	\n Configure the SPI to 8b
 /***************************************************************************/		
 
-void Display::spi_set_8bit( void )
+inline void Display::spi_set_8bit( void )
 {
-	//----------------------------------------------------------------
-	//	BODY
-	//----------------------------------------------------------------
-	
-	if (SPI_CTL0(Config::SPI_CH) & (uint32_t)(SPI_CTL0_FF16))
-	{
-		SPI_CTL0(Config::SPI_CH) &= ~(uint32_t)(SPI_CTL0_SPIEN);
-		SPI_CTL0(Config::SPI_CH) &= ~(uint32_t)(SPI_CTL0_FF16);
-		SPI_CTL0(Config::SPI_CH) |= (uint32_t)(SPI_CTL0_SPIEN);
-	}
-	
-	//----------------------------------------------------------------
-	//	RETURN
-	//----------------------------------------------------------------
-	
-	return;
+    //----------------------------------------------------------------
+    //	BODY
+    //----------------------------------------------------------------
+    
+    if (SPI_CTL0(Config::SPI_CH) & (uint32_t)(SPI_CTL0_FF16))
+    {
+        SPI_CTL0(Config::SPI_CH) &= ~(uint32_t)(SPI_CTL0_SPIEN);
+        SPI_CTL0(Config::SPI_CH) &= ~(uint32_t)(SPI_CTL0_FF16);
+        SPI_CTL0(Config::SPI_CH) |= (uint32_t)(SPI_CTL0_SPIEN);
+    }
+    
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
+    
+    return;
 }	//End Private HAL Method: spi_set_8bit | void |
 
 /***************************************************************************/
@@ -1163,29 +1437,95 @@ void Display::spi_set_8bit( void )
 //!	spi_set_16bit | void |
 /***************************************************************************/
 //! @details
-//!	\n HAL method
 //!	\n Configure the SPI to 16b
 /***************************************************************************/
 
-void Display::spi_set_16bit( void )
+inline void Display::spi_set_16bit( void )
 {
-	//----------------------------------------------------------------
-	//	BODY
-	//----------------------------------------------------------------
-	
-	if (!(SPI_CTL0(Config::SPI_CH) & (uint32_t)(SPI_CTL0_FF16)))
-	{
-		SPI_CTL0(Config::SPI_CH) &= ~(uint32_t)(SPI_CTL0_SPIEN);
-		SPI_CTL0(Config::SPI_CH) |= (uint32_t)(SPI_CTL0_FF16);
-		SPI_CTL0(Config::SPI_CH) |= (uint32_t)(SPI_CTL0_SPIEN);
-	}
-	
-	//----------------------------------------------------------------
-	//	RETURN
-	//----------------------------------------------------------------
-	
-	return;
+    //----------------------------------------------------------------
+    //	BODY
+    //----------------------------------------------------------------
+    
+    if (!(SPI_CTL0(Config::SPI_CH) & (uint32_t)(SPI_CTL0_FF16)))
+    {
+        SPI_CTL0(Config::SPI_CH) &= ~(uint32_t)(SPI_CTL0_SPIEN);
+        SPI_CTL0(Config::SPI_CH) |= (uint32_t)(SPI_CTL0_FF16);
+        SPI_CTL0(Config::SPI_CH) |= (uint32_t)(SPI_CTL0_SPIEN);
+    }
+    
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
+    
+    return;
 }	//End Private HAL Method: spi_set_16bit | void |
+
+/***************************************************************************/
+//!	@brief Private HAL Method
+//!	dma_send_map16 | uint16_t * | uint16_t |
+/***************************************************************************/
+//! @param data_ptr | uint16_t * | pointer to RGB565 pixel color map
+//! @param data_size | uint16_t | size of the pixel color map in pixels
+//! @return void
+//! @details
+//!	\n Use the DMA to send a 16b memory through the SPI
+/***************************************************************************/		
+
+inline void Display::dma_send_map16( uint16_t *data_ptr, uint16_t data_size )
+{
+    //----------------------------------------------------------------
+    //	BODY
+    //----------------------------------------------------------------
+    
+    dma_channel_disable( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH );
+    dma_memory_width_config( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH, DMA_MEMORY_WIDTH_16BIT );
+    dma_periph_width_config( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH, DMA_PERIPHERAL_WIDTH_16BIT );
+    dma_memory_address_config( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH, (uint32_t)(data_ptr) );
+    dma_memory_increase_enable( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH );
+    dma_transfer_number_config( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH, data_size );
+    //Begin the DMA transfer
+    dma_channel_enable( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH );
+    
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
+    
+    return;
+}	//End Private HAL Method: dma_send_map16 | uint16_t * | uint16_t |
+
+
+/***************************************************************************/
+//!	@brief Private HAL Method
+//!	dma_send_map16 | uint16_t * | uint16_t |
+/***************************************************************************/
+//! @param data_ptr | uint16_t * | pointer to RGB565 solid color for the full sprite
+//! @param data_size | uint16_t | size of the pixel color map in pixels
+//! @return void
+//! @details
+//!	\n Use the DMA to send a 16b data through the SPI a number of times
+/***************************************************************************/		
+
+inline void Display::dma_send_solid16( uint16_t* data_ptr, uint16_t data_size )
+{
+    //----------------------------------------------------------------
+    //	BODY
+    //----------------------------------------------------------------
+    
+    dma_channel_disable( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH );
+    dma_memory_width_config( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH, DMA_MEMORY_WIDTH_16BIT );
+    dma_periph_width_config( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH, DMA_PERIPHERAL_WIDTH_16BIT );
+    dma_memory_address_config( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH, (uint32_t)(data_ptr) );
+    dma_memory_increase_disable( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH );
+    dma_transfer_number_config( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH, data_size );
+    //Begin the DMA transfer
+    dma_channel_enable( Config::DMA_SPI_TX, (dma_channel_enum)Config::DMA_SPI_TX_CH );
+    
+    //----------------------------------------------------------------
+    //	RETURN
+    //----------------------------------------------------------------
+    
+    return;
+}	//End Private HAL Method: dma_send_map16 | uint16_t * | uint16_t |
 
 /**********************************************************************************
 **	NAMESPACE

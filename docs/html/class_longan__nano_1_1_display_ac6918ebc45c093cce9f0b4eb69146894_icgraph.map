@@ -1,7 +1,0 @@
-<map id="Longan_nano::Display::color" name="Longan_nano::Display::color">
-<area shape="rect" id="node1" title="Public Method color | uint8_t | uint8_t | uint8_t |." alt="" coords="303,71,453,112"/>
-<area shape="rect" id="node2" href="$class_longan__nano_1_1_screen.html#a75d151740ee5a10e8e77b415bdc815d3" title="public method paint | int | int | Color |" alt="" coords="105,5,253,47"/>
-<area shape="rect" id="node4" href="$class_longan__nano_1_1_screen.html#a5b3779b2374eaf15434bcde1288d6167" title="public setter set_palette_color | Color | uint8_t | uint8_t | uint8_t |" alt="" coords="105,71,253,112"/>
-<area shape="rect" id="node5" href="$class_longan__nano_1_1_display.html#a2014d7a172a5ed0032032c3ea52de5bd" title="public method clear | void |" alt="" coords="104,136,255,177"/>
-<area shape="rect" id="node3" href="$main_8cpp.html#a840291bc02cba5474a4cb46a9b9566fe" title=" " alt="" coords="5,13,56,39"/>
-</map>

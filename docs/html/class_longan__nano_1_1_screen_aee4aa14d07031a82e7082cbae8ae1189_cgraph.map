@@ -1,4 +1,0 @@
-<map id="Longan_nano::Screen::paint" name="Longan_nano::Screen::paint">
-<area shape="rect" id="node1" title="public method paint | int | int | Color |" alt="" coords="5,5,153,47"/>
-<area shape="rect" id="node2" href="$class_longan__nano_1_1_display.html#a4043c4f00415badd75bac95b14a16feb" title="Public Method color | uint8_t | uint8_t | uint8_t |." alt="" coords="201,5,352,47"/>
-</map>

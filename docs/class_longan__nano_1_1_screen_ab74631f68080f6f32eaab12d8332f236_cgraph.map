@@ -1,0 +1,33 @@
+<map id="Longan_nano::Screen::init" name="Longan_nano::Screen::init">
+<area shape="rect" id="node1" title="public init init | void" alt="" coords="5,263,153,304"/>
+<area shape="rect" id="node2" href="$class_longan__nano_1_1_display.html#a1d5115838177c5f3d011bc965d74a91b" title="public method clear | void |" alt="" coords="201,175,352,216"/>
+<area shape="rect" id="node15" href="$class_longan__nano_1_1_display.html#ae1af4d1ed35d43fd66cdd4f8573ffe68" title="Public init init | void |." alt="" coords="400,465,551,507"/>
+<area shape="rect" id="node28" href="$class_longan__nano_1_1_screen.html#abd195155d4fea2b0a4f2ec16c0a08701" title="private init init_default_colors | void |" alt="" coords="203,292,351,333"/>
+<area shape="rect" id="node29" href="$class_longan__nano_1_1_screen.html#af03618a1e93026129afe62a0125df3b2" title="private init init_frame_buffer | void" alt="" coords="203,357,351,399"/>
+<area shape="rect" id="node30" href="$class_longan__nano_1_1_screen.html#a5556da42883ee871f4cec98291165166" title="private init init_fsm | void |" alt="" coords="203,423,351,464"/>
+<area shape="rect" id="node31" href="$class_longan__nano_1_1_screen.html#ae9addca4141d58f5927fdd6fe54de881" title="private init init_palette | void" alt="" coords="203,109,351,151"/>
+<area shape="rect" id="node3" href="$class_longan__nano_1_1_display.html#a4043c4f00415badd75bac95b14a16feb" title="Public Method color | uint8_t | uint8_t | uint8_t |." alt="" coords="400,109,551,151"/>
+<area shape="rect" id="node4" href="$class_longan__nano_1_1_display.html#a668c59555e7024b2505ee68547db2e4f" title="public method draw_sprite | int | int | int | int | uint16_t * |" alt="" coords="400,175,551,216"/>
+<area shape="rect" id="node5" href="$class_longan__nano_1_1_display.html#a1181e774d7e66c6f42da00df754447f7" title="public method register_sprite | int | int | int | int | uint16_t * |" alt="" coords="599,109,749,151"/>
+<area shape="rect" id="node6" href="$class_longan__nano_1_1_display.html#afe002dea09973c6f6454dbc1357f1135" title="public method update_sprite | void |" alt="" coords="599,175,749,216"/>
+<area shape="rect" id="node7" href="$class_longan__nano_1_1_display.html#a09bd47bfa318c79c404eee99b2244e17" title="Private HAL Method dma_send_map16 | uint16_t * | uint16_t |." alt="" coords="819,267,969,308"/>
+<area shape="rect" id="node8" href="$class_longan__nano_1_1_display.html#a1d31651b718d0a6ea74ab64e3213012e" title="Private HAL Method dma_send_map16 | uint16_t * | uint16_t |." alt="" coords="819,5,969,47"/>
+<area shape="rect" id="node9" href="$class_longan__nano_1_1_display.html#adb2c68dbb10b79739c643bd1e4486dee" title="Private HAL Method is_spi_done_tx | void." alt="" coords="819,71,969,112"/>
+<area shape="rect" id="node10" href="$class_longan__nano_1_1_display.html#a70fa4807fc25596f231cbb2a29556b96" title="Private HAL Method is_spi_idle | void." alt="" coords="819,136,969,177"/>
+<area shape="rect" id="node11" href="$class_longan__nano_1_1_display.html#ade649f52fde91aced8a4d3ecfb3b0c64" title="Private HAL Method rs_mode_cmd | void |." alt="" coords="819,332,969,373"/>
+<area shape="rect" id="node12" href="$class_longan__nano_1_1_display.html#a0334d274f9e739413c822d148d0e640a" title="Private HAL Method rs_mode_data | void |." alt="" coords="819,397,969,439"/>
+<area shape="rect" id="node13" href="$class_longan__nano_1_1_display.html#aae670a881d96c6c84116a7cb93c3c182" title="Private HAL Method spi_set_16bit | void |." alt="" coords="819,201,969,243"/>
+<area shape="rect" id="node14" href="$class_longan__nano_1_1_display.html#a4db660bbfaf760d0fc649ba70271aa45" title="Private HAL Method spi_set_8bit | void |." alt="" coords="819,463,969,504"/>
+<area shape="rect" id="node16" href="$class_longan__nano_1_1_display.html#a8862c8dde54f2b80b25605d261517492" title="Private HAL Method cs_inactive | void |." alt="" coords="599,619,749,660"/>
+<area shape="rect" id="node17" href="$class_longan__nano_1_1_chrono.html#a3e6fd754c768a7350b06bbc1a02befdb" title="public static method delay | Unit | unsigned int |" alt="" coords="600,684,748,725"/>
+<area shape="rect" id="node19" href="$class_longan__nano_1_1_display.html#a5d567cbf71e23028cc44335b671fe1d9" title="Private init init_dma | void |." alt="" coords="599,749,749,791"/>
+<area shape="rect" id="node20" href="$class_longan__nano_1_1_display.html#a2c96ac1b7d088e1b31987fb605d9a634" title="Private init init_gpio | void |." alt="" coords="599,240,749,281"/>
+<area shape="rect" id="node21" href="$class_longan__nano_1_1_display.html#a3fd406be6ba44689a2ee6cf054c12af3" title="Private init init_spi | void |." alt="" coords="599,305,749,347"/>
+<area shape="rect" id="node22" href="$class_longan__nano_1_1_display.html#a76c4a2f692b2465d55d1e575b563d84b" title="Private init init_st7735 | void |." alt="" coords="599,553,749,595"/>
+<area shape="rect" id="node26" href="$class_longan__nano_1_1_display.html#a8326bd8056deb06a9ff4b9bb46c8bc02" title="Private HAL Method rst_active | void |." alt="" coords="599,371,749,412"/>
+<area shape="rect" id="node27" href="$class_longan__nano_1_1_display.html#af732c5be0ac2525b35d9bd3745555819" title="Private HAL Method rst_inactive | void |." alt="" coords="599,436,749,477"/>
+<area shape="rect" id="node18" href="$class_longan__nano_1_1_chrono.html#a23efe9467176efa7f6b63c907e9b08e7" title="private method compute_tick_per_time_unit | Unit |" alt="" coords="797,724,991,765"/>
+<area shape="rect" id="node23" href="$class_longan__nano_1_1_display.html#a449bf71b7f4c2d0c016eca52313ad76f" title="Private HAL Method cs_active | void |." alt="" coords="819,528,969,569"/>
+<area shape="rect" id="node24" href="$class_longan__nano_1_1_display.html#ab212a662719af6a64351f80266ce07f0" title="Private HAL Method spi_wait_idle | void." alt="" coords="819,593,969,635"/>
+<area shape="rect" id="node25" href="$class_longan__nano_1_1_display.html#ad438fdc91750ebb4af80307e752e5ec6" title="Private HAL Method spi_wait_tbe | void |." alt="" coords="819,659,969,700"/>
+</map>
