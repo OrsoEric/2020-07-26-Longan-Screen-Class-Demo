@@ -1,6 +1,10 @@
 # DOXYGEN Documentation  
 https://orsoeric.github.io/2020-07-26-Longan-Screen-Class-Demo/main_8cpp.html
-  
+
+# Blog   
+[Blog Post](https://fatherofmachines.blogspot.com/2020/08/2020-08-08-longan-nano-gd32vf103-demo.html)  
+[Blog Project Page](https://fatherofmachines.blogspot.com/p/longan-nano-gd32vf103.html)  
+
 # Longan-Screen-Class-Demo
 My objective for this project is to develop drivers for the Longan Nano evaluation board  
 I need a lightweight LCD screen driver that uses little CPU and print characters on the screen asynchronously  
@@ -22,9 +26,10 @@ The Screen driver uses between 1.1% to 2.4% of the CPU when scheduled every 100u
 9 - Profiler with colors  
 10 - Constant workload demo with CPU profiler
 
-!(https://user-images.githubusercontent.com/30684972/89022296-100f2c00-d322-11ea-85a3-86236ec6eb70.gif)
+Gif of the demo in action
+![2020-07-31 Longan Nano Demo](https://user-images.githubusercontent.com/30684972/89022296-100f2c00-d322-11ea-85a3-86236ec6eb70.gif)
 
-Youtube Video
+Youtube video of the demo in action with brief explaination
 [![VID](https://user-images.githubusercontent.com/30684972/89708265-b0460000-d975-11ea-9ef1-4c6acc2f1b2b.png)](http://www.youtube.com/watch?v=kqYAz0VRJZ8 "Screen Driver Demo Youtube Video")  
 
 # Conclusions  
